@@ -1,0 +1,8 @@
+#!/bin/bash
+
+gcc $* common.c constant_p.c \
+    syntax.c types.c ret_types.c \
+    c_config.c commstruc_p.c structure_p.c \
+    interpret_as.c expression.c oarrlist.c \
+    hl_parsers.c comment.c instruction_p.c \
+    -L. -lldparselib -lm -DDEBUG
