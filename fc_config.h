@@ -1,0 +1,6 @@
+#ifndef FANTASY_CONSOLE_HEADER
+#define FANTASY_CONSOLE_HEADER
+
+#define STACK_FRAME_SIZE 32
+
+#endif
