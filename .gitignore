@@ -1,0 +1,10 @@
+.vscode/
+parsing/.vscode
+dist/
+parsing/dist
+libs/
+asm/
+
+*.o
+*.a
+*.exe

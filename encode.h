@@ -5,7 +5,8 @@
 #include "assemblelib.h"
 #include "encoder.h"
 
-uint16_t evaluate_node(Syntax* syn, Map symbols, Map structures);
+uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures, bool* borke);
+uint16_t evaluate_node(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures);
 
 void encodeInstruction(uint8_t* mCode, AssemblyContext* asmCon, InstructionItem* iex);
 

@@ -15,10 +15,10 @@
 #define odebug(x) x & 0x03
 
 char* registerNames[] = {
-    "acu", "ip",
+    "ip", "acu",
     "r1", "r2", "r3", "r4",
     "r5", "r6", "r7", "r8",
-    "fp", "sp"
+    "sp", "fp", "mb", "im"
 };
 int registerIndexes[] = {
     0,  1,  2,  3,  4,  5,  6,
@@ -79,7 +79,7 @@ AssemblyResult* cassemble(char* asmC, uint16_t cOffset, DebugFlags debug, FILE* 
     asmCon->len = len;
     asmCon->readOutput = ro;
     asmCon->sAddr = cOffset;
-    asmCon->registersMap = simplemap_int(registerNames, registerIndexes, 12);
+    asmCon->registersMap = simplemap_int(registerNames, registerIndexes, 14);
 
     uint8_t* mCode = encodeAsm(asmCon);
     int mLen = ro->cAddr - cOffset;

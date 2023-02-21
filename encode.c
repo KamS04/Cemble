@@ -5,6 +5,7 @@
 #include "map.h"
 #include "encoder.h"
 #include "encode.h"
+#include "string.h"
 
 uint16_t hex_to_int16(char* hex) {
     int le;
@@ -30,17 +31,29 @@ uint16_t hex_to_int16(char* hex) {
     return t[0] << 12 | t[1] << 8 | t[2] << 4 | t[3];
 }
 
-uint16_t evaluate_node(Syntax* syn, Map symbols, Map structures) {
+bool random_boolean;
+uint16_t evaluate_node(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures) {
+    return evaluate_node_core(asmCon, syn, symbols, structures, &random_boolean);
+}
+
+uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures, bool* borke) {
     switch (syn->type) {
         case VARIABLE:
             assert(syn->v_type == STRING)
+            if (strcmp(syn->value, "CLINE") == 0) {
+                if (asmCon == NULL) {
+                    *borke = true;
+                    return 0;
+                }
+                return asmCon->cAddr;
+            }
             return gm_int(symbols, syn->value);
         case INTERPRET_AS_SINGLE: {
             assert(syn->v_type == INTERPRET_SINGLE_TYPE)
             InterpretSingle* is = syn->value;
             StructureComp* structure = gm_ptr(structures, is->structure);
             StructMember* member = gm_ptr(structure->members, is->property);
-            uint16_t symbol = evaluate_node(is->symbol, symbols, structures);
+            uint16_t symbol = evaluate_node(asmCon, is->symbol, symbols, structures);
             return symbol + member->offset;
         }
         case INTERPRET_AS_ARRAY: {
@@ -48,8 +61,8 @@ uint16_t evaluate_node(Syntax* syn, Map symbols, Map structures) {
             InterpretArray* ia = syn->value;
             StructureComp* structure = gm_ptr(structures, ia->structure);
             StructMember* member = gm_ptr(structure->members, ia->property);
-            uint16_t symbol = evaluate_node(ia->symbol, symbols, structures);
-            uint16_t index = evaluate_node(ia->index, symbols, structures);
+            uint16_t symbol = evaluate_node(asmCon, ia->symbol, symbols, structures);
+            uint16_t index = evaluate_node(asmCon, ia->index, symbols, structures);
             return symbol + ( index * structure->totalSize ) + member->offset;
         }
         case ADDRESS:
@@ -59,13 +72,13 @@ uint16_t evaluate_node(Syntax* syn, Map symbols, Map structures) {
         
         case SQUARE_BRACKET_EXPRESSION:
             assert(syn->v_type == SYNTAX_TYPE)
-            return evaluate_node(syn->value, symbols, structures);
+            return evaluate_node(asmCon, syn->value, symbols, structures);
         
         case BINARY_OPERATION: {
             assert(syn->v_type == BINARY_OPERATION_TYPE)
             BinaryOperation* bo = syn->value;
-            uint16_t a = evaluate_node(bo->a, symbols, structures);
-            uint16_t b = evaluate_node(bo->b, symbols, structures);
+            uint16_t a = evaluate_node(asmCon, bo->a, symbols, structures);
+            uint16_t b = evaluate_node(asmCon, bo->b, symbols, structures);
             if (bo->operation == '+') {
                 return a + b;
             } else if (bo->operation == '-') {
@@ -142,6 +155,10 @@ void encodeInstruction(uint8_t* mCode, AssemblyContext* asmCon, InstructionItem*
         case noArgs: {
             break;
         }
+        case singleLit8: {
+            encodeLit8OrMem(mCode, asmCon, iex->args[0]);
+            break;
+        }
     }
 }
 
@@ -152,9 +169,9 @@ Hex literals
 void encodeData(uint8_t* mCode, AssemblyContext* asmCon, DataElement* dex) {
     for (int i = 0; i < dex->val_len; i++) {
         if (dex->size == 8) {
-            mCode[asmCon->cAddr++] = (uint8_t)evaluate_node(dex->values[0], asmCon->readOutput->symbols, asmCon->readOutput->structures);
+            mCode[asmCon->cAddr++] = (uint8_t)evaluate_node(asmCon, dex->values[i], asmCon->readOutput->symbols, asmCon->readOutput->structures);
         } else {
-            uint8_t b2yte = evaluate_node(dex->values[i], asmCon->readOutput->symbols, asmCon->readOutput->structures);
+            uint8_t b2yte = evaluate_node(asmCon, dex->values[i], asmCon->readOutput->symbols, asmCon->readOutput->structures);
             mCode[asmCon->cAddr++] = (uint8_t)(b2yte >> 8);
             mCode[asmCon->cAddr++] = (uint8_t)b2yte;
         }
@@ -162,13 +179,13 @@ void encodeData(uint8_t* mCode, AssemblyContext* asmCon, DataElement* dex) {
 }
 
 void encodeLitOrMem(uint8_t* mCode, AssemblyContext* asmCon, Syntax* lit) {
-    uint16_t b2yte = evaluate_node(lit, asmCon->readOutput->symbols, asmCon->readOutput->structures);
+    uint16_t b2yte = evaluate_node(asmCon, lit, asmCon->readOutput->symbols, asmCon->readOutput->structures);
     mCode[asmCon->cAddr++] = (uint8_t)(b2yte >> 8);
     mCode[asmCon->cAddr++] = (uint8_t)b2yte;
 }
 
 void encodeLit8OrMem(uint8_t* mCode, AssemblyContext* asmCon, Syntax* lit) {
-    uint16_t b2yte = evaluate_node(lit, asmCon->readOutput->symbols, asmCon->readOutput->structures);
+    uint16_t b2yte = evaluate_node(asmCon, lit, asmCon->readOutput->symbols, asmCon->readOutput->structures);
     mCode[asmCon->cAddr++] = (uint8_t)b2yte;
 }
 

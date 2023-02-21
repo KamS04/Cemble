@@ -26,6 +26,8 @@ void _struc_koro(koroctx* kctx) {
     cruYield(optionalWhitespace);
     
     crYield(opCurl);
+
+    #ifdef SINGLE_THREADED_ONLY
     static ResArrD* rad;
     crYield(rad, ResArrD*, commSepKVP, data);
     cruYield(cloCurl);
@@ -38,6 +40,26 @@ void _struc_koro(koroctx* kctx) {
         free(ri);
     }
     free(rad);
+    #else
+    // evile, result is actually a ResArrD* pointer, but we're pretending its a SSynPair**
+    // in order to save in the context/data
+    // truly vile
+    crYield(KMDAT(members), SSynPair**, commSepKVP, data);
+    cruYield(cloCurl);
+
+    // Remember KMDAT(values) is a SSynPair** pointer, but we saved a ResArrD* pointer inside it
+    // be oh so fuckiiiiiing careful bro
+    // once again truly vile
+    ResArrD* rad = KMDAT(members);
+    KMDAT(mem_len) = rad->a_len;
+    KMDAT(members) = malloc(rad->a_len * sizeof(Syntax*));
+    for (int i = 0; i < rad->a_len; i++) {
+        result* ri = rad->arr[i];
+        KMDAT(members)[i] = ri->data;
+        free(ri);
+    }
+    free(rad);
+    #endif
 
     Syntax* syn = create_syntax(
         STRUCTURE,
@@ -62,6 +84,8 @@ void _args_struc_koro(koroctx* kctx) {
     cruYield(optionalWhitespace);
 
     crYield(opCurl);
+    
+    #ifdef SINGLE_THREADED_ONLY
     static ResArrD* rad;
     crYield(rad, ResArrD*, commSepKVP, data);
     cruYield(cloCurl);
@@ -74,6 +98,26 @@ void _args_struc_koro(koroctx* kctx) {
         free(ri);
     }
     free(rad);
+    #else
+    // evile, result is actually a ResArrD* pointer, but we're pretending its a SSynPair**
+    // in order to save in the context/data
+    // truly vile
+    crYield(KMDAT(members), SSynPair**, commSepKVP, data);
+    cruYield(cloCurl);
+
+    // Remember KMDAT(values) is a SSynPair** pointer, but we saved a ResArrD* pointer inside it
+    // be oh so fuckiiiiiing careful bro
+    // once again truly vile
+    ResArrD* rad = KMDAT(members);
+    KMDAT(mem_len) = rad->a_len;
+    KMDAT(members) = malloc(rad->a_len * sizeof(Syntax*));
+    for (int i = 0; i < rad->a_len; i++) {
+        result* ri = rad->arr[i];
+        KMDAT(members)[i] = ri->data;
+        free(ri);
+    }
+    free(rad);
+    #endif
 
     Syntax* syn = create_syntax(
         ARGUMENT_STRUCTURE,

@@ -39,6 +39,8 @@ constant stepBackward = $0004
 constant stepForward = $fffc
 
 start:
+    mms $01
+starter:
     mov8 &[!hasDied], acu
     jne $00, &[!update_cars]
 
@@ -287,7 +289,7 @@ after_frame:
     mov8 $00, &[!hasEnded]
     pop acu
     pop r8
-    psh [!start]
+    psh [!starter]
     rti
 
 

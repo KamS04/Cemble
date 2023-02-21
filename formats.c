@@ -226,5 +226,6 @@ insParserCreator typeCreatorMap[] = {
     &fSingleLit,
     &fRegRegPtr,
     &fSingleMem,
-    &fRegPtr
+    &fRegPtr,
+    &fSingleLit
 };

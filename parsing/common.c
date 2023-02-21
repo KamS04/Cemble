@@ -82,18 +82,18 @@ void init_common_ass_parsers() {
     comma = optionalWhitespaceSurrounded(charP(','));
     colon = optionalWhitespaceSurrounded(charP(':'));
 
-    parser** rs = malloc( 12 * sizeof(parser*) );
+    parser** rs = malloc( 14 * sizeof(parser*) );
     parser* trs[] = {
-        strP("acu"), strP("ip"),
+        strP("ip"), strP("acu"),
         strP("r1"), strP("r2"), strP("r3"), strP("r4"),
         strP("r5"), strP("r6"), strP("r7"), strP("r8"),
-        strP("fp"), strP("sp")
+        strP("sp"), strP("fp"), strP("mb"), strP("im")
     };
-    memcpy(rs, trs, 12 * sizeof(parser*));
-    registers = map(choice(rs, 12), &syntax_mapper, false, REGISTER);
+    memcpy(rs, trs, 14 * sizeof(parser*));
+    registers = map(choice(rs, 14), &syntax_mapper, false, REGISTER);
 
     hexDigit = regexP("^[0-9a-fA-F]");
-    hexLiteral = map(regexP("\\$[0-9a-fA-F]+"), &syntax_mapper, false, HEX_LITERAL);
+    hexLiteral = map(regexP("^\\$[0-9a-fA-F]+"), &syntax_mapper, false, HEX_LITERAL);
 
     address = map(regexP("^&[0-9a-fA-F]+"), &syntax_mapper, false, ADDRESS);
 
@@ -109,11 +109,14 @@ void init_common_ass_parsers() {
     l[2] = optionalWhitespace;
     // Get first item out of array for label
     label = map(sequenceOf(l, 3), &labelMapper, false, NULL);
+
     keyValP = korop(&_key_val, false);
     commSepKVP = commaSeparated(keyValP);
     semiColon = charP(';');
 
     _nloearr[0] = charP('\n');
+
+    
     _nloearr[1] = endOfInput;
     nLineOrEnd = choice(_nloearr, 2);
 }

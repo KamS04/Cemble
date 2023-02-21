@@ -19,7 +19,8 @@ typedef enum {
     singleLit,
     regRegPtr,
     singleMem,
-    regPtr
+    regPtr,
+    singleLit8
 } InstructionType;
 
 typedef struct {

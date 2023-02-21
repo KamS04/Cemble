@@ -66,7 +66,12 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
                     printf("Constant: %s already has a binding to %d\n", x->name, gm_int(symbols, x->name));
                     exit(3);
                 }
-                int value = evaluate_node(x->value, symbols, structures);
+                bool failed = false;
+                int value = evaluate_node_core(NULL, x->value, symbols, structures, &failed);
+                if (failed) {
+                    printf("Constant: %s, cannot use CLINE i.e. line number in commpiletime only constant.");
+                    exit(3);
+                }
                 add_ito(symbols, x->name, value);
                 break;
             }
@@ -101,7 +106,12 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
                     StructMember* sm = malloc(sizeof(StructMember));
                     sm->name = ssp->key;
                     sm->offset = mOff;
-                    sm->size = evaluate_node(ssp->val, symbols, structures);
+                    bool failed = false;
+                    sm->size = evaluate_node_core(NULL, ssp->val, symbols, structures, &failed);
+                    if (failed) {
+                        printf("Structure: %s, cannot use CLINE i.e. line number when defining compiletime only structure.");
+                        exit(3);
+                    }
                     mOff += sm->size;
                     add_pto(mMap, ssp->key, sm);
                 }

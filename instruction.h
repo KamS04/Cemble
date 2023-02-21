@@ -23,7 +23,8 @@ typedef enum {
     singleLit,
     regRegPtr,
     singleMem,
-    regPtr
+    regPtr,
+    singleLit8
 } InstructionType;
 
 typedef struct {
@@ -33,7 +34,7 @@ typedef struct {
     char mnemonic[5];
 } Instruction;
 
-extern Instruction instructions[59];
+extern Instruction instructions[];
 extern int NUM_INSTRUCTIONS;
 
 extern size_t instSizes[];

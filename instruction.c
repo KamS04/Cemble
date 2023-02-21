@@ -1,6 +1,6 @@
 #include "instruction.h"
 #include<stdio.h>
-#include "formats.h"
+// #include "formats.h"
 
 Instruction instructions[] = {
     { "LOG_REG", 0x50, singleReg, "log" },
@@ -12,7 +12,7 @@ Instruction instructions[] = {
     { "MOVL_REG_MEM", 0x73, regMem, "movl" },
     { "MOVH_REG_MEM", 0x74, regMem, "movh" },
     { "MOV8_REG_PTR_REG", 0x76, regPtrReg, "mov8" },
-    { "MOV8_REG_REG_PTR", 0x76, regRegPtr, "mov8" },
+    { "MOV8_REG_REG_PTR", 0x77, regRegPtr, "mov8" },
 
     { "MOV_LIT_REG", 0x10, litReg, "mov" },
     { "MOV_REG_REG", 0x11, regReg, "mov" },
@@ -23,14 +23,17 @@ Instruction instructions[] = {
     { "MOV_REG_PTR_REG", 0x1c, regPtrReg, "mov" },
     { "MOV_LIT_OFF_REG", 0x1d, litOffReg, "mov" },
 
-    { "INT", 0xfd, singleLit, "int" },
+    { "INT_LIT", 0xfd, singleLit, "int" },
+    { "INT_REG", 0xf1, singleReg, "int" },
     { "RET_INT", 0xfc, noArgs, "rti" },
 
     { "ADD_REG_REG", 0x14, regReg, "add" },
     { "ADD_LIT_REG", 0x3f, litReg, "add" },
+
     { "SUB_LIT_REG", 0x16, litReg, "sub" },
     { "SUB_REG_LIT", 0x1e, regLit, "sub" },
     { "SUB_REG_REG", 0x1f, regReg, "sub" },
+    
     { "INC_REG", 0x35, singleReg, "inc" },
     { "DEC_REG", 0x36, singleReg, "dec" },
     { "MUL_LIT_REG", 0x20, litReg, "mul" },
@@ -49,6 +52,8 @@ Instruction instructions[] = {
     { "XOR_REG_REG", 0x33, regReg, "xor" },
     { "NOT", 0x34, singleReg, "not" },
 
+    { "JMP_REG", 0x2c, singleReg, "jmp" },
+    { "JMP_LIT", 0x2d, singleMem, "jmp" },
     { "JMP_NOT_EQ", 0x15, litMem, "jne" },
     { "JNE_REG", 0x40, regMem, "jne" },
     { "JEQ_REG", 0x3e, regMem, "jeq" },
@@ -70,12 +75,18 @@ Instruction instructions[] = {
     { "CAL_REG", 0x5f, singleReg, "cal" },
     { "RET", 0x60, noArgs, "ret" },
     { "HLT", 0xff, noArgs, "hlt" },
-    { "BRK", 0xfb, noArgs, "brk" }
+    { "BRK", 0xfb, noArgs, "brk" },
+    { "NOP", 0xf2, noArgs, "nop" },
+
+    { "MEM_MODE_SET", 0xfe, singleLit8, "mms" },
+    { "SEND_SIG", 0xfa, singleReg, "sig" },
+    { "REAL_REG_PTR", 0x01, regReg, "rav" },
+    { "REAL_MEM", 0x02, memReg, "rav" }
 };
-int NUM_INSTRUCTIONS = 59;
+int NUM_INSTRUCTIONS = 67;
 
 size_t instructionSizes[] = {
-    4, 4, 3, 3, 4, 4, 5, 4, 3, 5, 1, 2, 3, 3, 3, 2
+    4, 4, 3, 3, 4, 4, 5, 4, 3, 5, 1, 2, 3, 3, 3, 2, 2
 };
 
 char* instTypeStrs[] = {
@@ -95,4 +106,5 @@ char* instTypeStrs[] = {
     "regRegPtr",
     "singleMem",
     "regPtr",
+    "singleLit8"
 };

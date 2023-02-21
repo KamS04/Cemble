@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
     putchar('\n');
 
     if (opt.output) {
-        FILE* outFile = fopen(opt.output, "w");
+        FILE* outFile = fopen(opt.output, "wb");
         fwrite(aRes->mCode, aRes->lenMC, 1, outFile);
         fclose(outFile);
     } else {
