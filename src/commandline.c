@@ -140,6 +140,9 @@ int main(int argc, char* argv[]) {
     if (opt.file == NULL) {
         puts("No input file specified");
         exit(3);
+    } else if (!exists(opt.file)) {
+        puts("Input file does not exist");
+        exit(3);
     }
 
     char* assembly = read_assembly_file(opt.file);

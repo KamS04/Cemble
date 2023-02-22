@@ -1,5 +1,10 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<unistd.h>
+
+int exists(char* filename) {
+    return access(filename, F_OK);
+}
 
 char* read_assembly_file(char* filename) {
     FILE* inputFile = fopen(filename, "rb");

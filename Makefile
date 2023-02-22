@@ -53,10 +53,10 @@ SPECIFICHEADERS=$(wildcard $(SPECIFIC)/include/*.h)
 
 
 SPECIFICOBJECTS=$(patsubst $(SPECIFIC)/include/%.h,$(OBJDIR)/$(SPECIFIC)/$(SPECIFICPREFIX)%$(OBJEXT),$(SPECIFICHEADERS))
-SPECIFICDEPFILES=$(patsubst $(SPECIFIC)/include/%.h,$(DEPDIR)/$(SPECIFIC)/%$(DEPEXT),$(SPECIFICHEADERS))
+SPECIFICDEPFILES=$(patsubst $(SPECIFIC)/include/%.h,$(DEPDIR)/$(SPECIFIC)/$(SPECIFICPREFIX)%$(DEPEXT),$(SPECIFICHEADERS))
 
 DEBUGSPECIFICOBJECTS=$(patsubst $(SPECIFIC)/include/%.h,$(OBJDIR)/$(SPECIFIC)/$(SPECIFICPREFIX)%.d$(OBJEXT),$(SPECIFICHEADERS))
-DEBUGSPECIFICDEPFILES=$(patsubst $(SPECIFIC)/include/%.h,$(DEPDIR)/$(SPECIFIC)/%.d$(DEPEXT),$(SPECIFICHEADERS))
+DEBUGSPECIFICDEPFILES=$(patsubst $(SPECIFIC)/include/%.h,$(DEPDIR)/$(SPECIFIC)/$(SPECIFICPREFIX)%.d$(DEPEXT),$(SPECIFICHEADERS))
 
 CC=gcc
 OPT=
@@ -122,12 +122,12 @@ $(RELEASE): $(OBJECTS) $(ASSEMBLELIB)
 
 # debug build
 $(DEBUG): $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB)
-	$(CC) $(CFLAGS) -o $(DEBUG) $(DEBUGOBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
+	$(CC) $(CFLAGS) -o $(DEBUG) $(DEBUGOBJECTS) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
 	@echo "Success Debug Build"
 
 # test build
 test: $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB)
-	$(CC) $(CFLAGS) -o $(ofile) $(tfile) $(DEBUGOBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
+	$(CC) $(CFLAGS) -o $(ofile) $(tfile) $(filter-out $(OBJDIR)/src/commandline.d$(OBJEXT),$(DEBUGOBJECTS)) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
 
 # release objects
 $(OBJDIR)/%$(OBJEXT): %.c

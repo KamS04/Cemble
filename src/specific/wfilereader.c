@@ -1,5 +1,17 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<fileapi.h>
+#include<minwindef.h>
+
+// Why can't windows just be unix?????? posix whatever
+int exists(char* filename) {
+    DWORD dwAttrib = GetFileAttributes(filename);
+
+    return (
+        dwAttrib != INVALID_FILE_ATTRIBUTES &&
+        !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY)
+    );
+}
 
 // I hate this entire function
 char* read_assembly_file(char* filename) {

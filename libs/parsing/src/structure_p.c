@@ -6,6 +6,7 @@
 #include "ret_types.h"
 #include<stdlib.h>
 #include<stdio.h>
+#include<log.h>
 
 parser* _strucP = NULL;
 parser* _fstrucP = NULL; 
@@ -17,20 +18,27 @@ void _struc_koro(koroctx* kctx) {
     #define _kdtype StructureElement
     #define _krtype result
     ALLOCATE_DAT();
+    LOG(puts("start struct p"));
     crYield(posPlus);
+    LOG(puts("struct +"));
     KMDAT(is_export) = KLAST != NULL;
 
     crYield(_strucP);
+    LOG(puts("struct structure"));
     crYield(whitespace);
     crYield(KMDAT(name), char*, validIdentifier, data);
+    LOG(puts("struct valid"));
     cruYield(optionalWhitespace);
     
     crYield(opCurl);
+    LOG(puts("struct {"));
 
     #ifdef SINGLE_THREADED_ONLY
     static ResArrD* rad;
     crYield(rad, ResArrD*, commSepKVP, data);
+    LOG(puts("struct commaSepKVP"));
     cruYield(cloCurl);
+    LOG(puts("struct }"));
 
     KMDAT(mem_len) = rad->a_len;
     KMDAT(members) = malloc(rad->a_len * sizeof(Syntax*));
@@ -45,7 +53,9 @@ void _struc_koro(koroctx* kctx) {
     // in order to save in the context/data
     // truly vile
     crYield(KMDAT(members), SSynPair**, commSepKVP, data);
+    LOG(puts("struct commaSepKVP"));
     cruYield(cloCurl);
+    LOG(puts("struct }"));
 
     // Remember KMDAT(values) is a SSynPair** pointer, but we saved a ResArrD* pointer inside it
     // be oh so fuckiiiiiing careful bro
