@@ -2,9 +2,19 @@
 parsing/.vscode
 dist/
 parsing/dist
-libs/
 asm/
 
 *.o
 *.a
+*.d
 *.exe
+
+dist/
+builds/
+objbuilds/
+depfiles/
+
+libs/parsing/dist
+libs/parsing/builds
+libs/parsing/objbuilds
+libs/parsing/depfiles
