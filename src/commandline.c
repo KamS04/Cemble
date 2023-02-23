@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
         fclose(outFile);
     } else {
         for (int i = 0; i < aRes->lenMC; i++) {
-            if (i != 0 & i % 8 == 0) {
+            if ( (i != 0) & (i % 8 == 0) ) {
                 putchar('\n');
             }
             uint8_t byte = aRes->mCode[i];

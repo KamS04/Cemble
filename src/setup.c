@@ -5,7 +5,8 @@
 #include "assemblelib.h"
 
 char* strsyntax(result* c, bool nl) {
-    return syntax_to_string(c->data, nl);
+    assert(c->data_type == SYNTAX_TYPE);
+    return syntax_to_string(c->data.ptr, nl);
 }
 void dsyntax(result* c) {
     if (c->data_type != SYNTAX_TYPE) {
@@ -13,13 +14,14 @@ void dsyntax(result* c) {
         exit(3);
     }
     // TODO deallocate value inside of syntax
-    free(c->data);
+    free(c->data.ptr);
     free(c);
 }
 
 char* strssyn(result* c, bool nl) {
+    assert(c->data_type == SSYN_PAIR_TYPE);
     char* s;
-    convert_ret_item_to_str(c->data, SSYN_PAIR_TYPE, &s);
+    convert_ret_item_to_str(c->data.ptr, SSYN_PAIR_TYPE, &s);
     return s;
 }
 void dssyn(result* c) {
@@ -28,7 +30,7 @@ void dssyn(result* c) {
         exit(3);
     }
     // TODO deallocate value inside of SSynPair
-    free(c->data);
+    free(c->data.ptr);
     free(c);
 }
 

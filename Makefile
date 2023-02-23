@@ -116,12 +116,12 @@ setup:
 endif
 
 # release build
-$(RELEASE): $(OBJECTS) $(ASSEMBLELIB)
+$(RELEASE): $(OBJECTS) $(ASSEMBLELIB) $(PARSELIB)
 	$(CC) $(CFLAGS) -o $(RELEASE) $(OBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNPARSE) $(LNASSEMBLE)) -lm
 	@echo "Success Release Build"
 
 # debug build
-$(DEBUG): $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB)
+$(DEBUG): $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB) $(DEBUGPARSELIB)
 	$(CC) $(CFLAGS) -o $(DEBUG) $(DEBUGOBJECTS) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
 	@echo "Success Debug Build"
 
@@ -144,6 +144,12 @@ $(ASSEMBLELIB):
 # debug assemblelib
 $(DEBUGASSEMBLELIB):
 	$(MAKE) -c $(PARSINGDIR)
+
+$(PARSELIB):
+	@echo "Parselib reloaded"
+
+$(DEBUGPARSELIB):
+	@echo "Debug Parselib reloaded"
 
 ifeq ($(OS), Windows_NT)
 clean:

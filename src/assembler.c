@@ -42,7 +42,7 @@ AssemblyResult* cassemble(char* asmC, uint16_t cOffset, DebugFlags debug, FILE* 
         exit(3);
     }
 
-    ResArrD* orad = sn->result->data;
+    ResArrD* orad = sn->result->data.ptr;
     int len = orad->a_len;
     Syntax** parsedAss = (Syntax**)orad->arr;
     

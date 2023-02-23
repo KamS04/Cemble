@@ -40,17 +40,17 @@ uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, M
     switch (syn->type) {
         case VARIABLE:
             assert(syn->v_type == STRING)
-            if (strcmp(syn->value, "CLINE") == 0) {
+            if (strcmp(syn->value.ptr, "CLINE") == 0) {
                 if (asmCon == NULL) {
                     *borke = true;
                     return 0;
                 }
                 return asmCon->cAddr;
             }
-            return gm_int(symbols, syn->value);
+            return gm_int(symbols, syn->value.ptr);
         case INTERPRET_AS_SINGLE: {
             assert(syn->v_type == INTERPRET_SINGLE_TYPE)
-            InterpretSingle* is = syn->value;
+            InterpretSingle* is = syn->value.ptr;
             StructureComp* structure = gm_ptr(structures, is->structure);
             StructMember* member = gm_ptr(structure->members, is->property);
             uint16_t symbol = evaluate_node(asmCon, is->symbol, symbols, structures);
@@ -58,7 +58,7 @@ uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, M
         }
         case INTERPRET_AS_ARRAY: {
             assert(syn->v_type == INTERPRET_ARRAY_TYPE)
-            InterpretArray* ia = syn->value;
+            InterpretArray* ia = syn->value.ptr;
             StructureComp* structure = gm_ptr(structures, ia->structure);
             StructMember* member = gm_ptr(structure->members, ia->property);
             uint16_t symbol = evaluate_node(asmCon, ia->symbol, symbols, structures);
@@ -68,15 +68,15 @@ uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, M
         case ADDRESS:
         case HEX_LITERAL:
             assert(syn->v_type == STRING)
-            return hex_to_int16(syn->value+1);
+            return hex_to_int16(&((char*)syn->value.ptr)[1]);
         
         case SQUARE_BRACKET_EXPRESSION:
             assert(syn->v_type == SYNTAX_TYPE)
-            return evaluate_node(asmCon, syn->value, symbols, structures);
+            return evaluate_node(asmCon, syn->value.ptr, symbols, structures);
         
         case BINARY_OPERATION: {
             assert(syn->v_type == BINARY_OPERATION_TYPE)
-            BinaryOperation* bo = syn->value;
+            BinaryOperation* bo = syn->value.ptr;
             uint16_t a = evaluate_node(asmCon, bo->a, symbols, structures);
             uint16_t b = evaluate_node(asmCon, bo->b, symbols, structures);
             if (bo->operation == '+') {
@@ -191,5 +191,5 @@ void encodeLit8OrMem(uint8_t* mCode, AssemblyContext* asmCon, Syntax* lit) {
 
 void encodeReg(uint8_t* mCode, AssemblyContext* asmCon, Syntax* reg) {
     assert(reg->v_type == STRING)
-    mCode[asmCon->cAddr++] = (uint8_t)gm_int(asmCon->registersMap, reg->value);
+    mCode[asmCon->cAddr++] = (uint8_t)gm_int(asmCon->registersMap, reg->value.ptr);
 }

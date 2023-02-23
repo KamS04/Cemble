@@ -21,17 +21,20 @@ uint8_t* encodeAsm(AssemblyContext* asmCon) {
 
             case DATA: {
                 assert(syn->v_type == DATA_ELEMENT_TYPE)
-                DataElement* dex = syn->value;
+                DataElement* dex = syn->value.ptr;
                 encodeData(mCode, asmCon, dex);
                 break;
             }
 
             case INSTRUCTION: {
                 assert(syn->v_type == INSTRUCTION_ITEM_TYPE)
-                InstructionItem* iex = syn->value;
+                InstructionItem* iex = syn->value.ptr;
                 encodeInstruction(mCode, asmCon, iex);
                 break;
             }
+
+            default:
+                break;
         }
     }
 

@@ -17,6 +17,7 @@ CountOutput* countRun(Syntax** parsedAssembly, int len) {
         switch (syn->type) {
             case DATA:
                 lines++;
+                // fall through
             case LABEL:
             case CONSTANT:
                 symbols++;
@@ -27,6 +28,9 @@ CountOutput* countRun(Syntax** parsedAssembly, int len) {
                 break;
             case INSTRUCTION:
                 lines++;
+                // fall through
+            default:
+                break;
         }
     }
 
@@ -54,14 +58,14 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
             case COMMENT: break;
             case LABEL:
                 assert(syn->v_type == STRING);
-                if ( has_key(symbols, syn->value) ) {
-                    printf("Label: %s already has a binding to %d\n", (char*)syn->value, gm_int(symbols, syn->value));
+                if ( has_key(symbols, syn->value.ptr) ) {
+                    printf("Label: %s already has a binding to %d\n", (char*)syn->value.ptr, gm_int(symbols, syn->value.ptr));
                     exit(3);
                 }
-                add_ito(symbols, syn->value, cAddr);
+                add_ito(symbols, syn->value.ptr, cAddr);
                 break;
             case CONSTANT: {
-                ConstantElement* x = syn->value;
+                ConstantElement* x = syn->value.ptr;
                 if ( has_key(symbols, x->name) ) {
                     printf("Constant: %s already has a binding to %d\n", x->name, gm_int(symbols, x->name));
                     exit(3);
@@ -69,14 +73,14 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
                 bool failed = false;
                 int value = evaluate_node_core(NULL, x->value, symbols, structures, &failed);
                 if (failed) {
-                    printf("Constant: %s, cannot use CLINE i.e. line number in commpiletime only constant.");
+                    printf("Constant: %s, cannot use CLINE i.e. line number in commpiletime only constant.", x->name);
                     exit(3);
                 }
                 add_ito(symbols, x->name, value);
                 break;
             }
             case DATA: {
-                DataElement* dex = syn->value;
+                DataElement* dex = syn->value.ptr;
                 if ( has_key(symbols, dex->name) ) {
                     printf("Data: %s already has a binding to %d\n", dex->name, gm_int(symbols, dex->name) );
                     exit(3);
@@ -88,13 +92,13 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
             }
             case ARGUMENT_STRUCTURE:
             case STRUCTURE: {
-                StructureElement* sex = syn->value;
+                StructureElement* sex = syn->value.ptr;
                 if ( has_key(structures, sex->name) ) {
                     printf("Structure: %s already has a binding\n", sex->name);
                     exit(3);
                 }
                 uint16_t mOff;
-                if (syn->type = STRUCTURE) {
+                if (syn->type == STRUCTURE) {
                     mOff = 0;
                 } else {
                     mOff = STACK_FRAME_SIZE;
@@ -109,7 +113,7 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
                     bool failed = false;
                     sm->size = evaluate_node_core(NULL, ssp->val, symbols, structures, &failed);
                     if (failed) {
-                        printf("Structure: %s, cannot use CLINE i.e. line number when defining compiletime only structure.");
+                        printf("Structure: %s, cannot use CLINE i.e. line number when defining compiletime only structure.", sex->name);
                         exit(3);
                     }
                     mOff += sm->size;
@@ -125,7 +129,7 @@ ReadOutput* readRun(Syntax** parsedAssembly, int len, char* asmC, uint16_t cOffs
             }
             default: {
                 assert(syn->type == INSTRUCTION);
-                InstructionItem* iit = syn->value;
+                InstructionItem* iit = syn->value.ptr;
                 cAddr += instruction_size( iit->ins->type );
                 IAPPEND(nLIdxs, cAddr);
             }

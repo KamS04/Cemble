@@ -13,10 +13,10 @@ InstructionItem* create_insitem(Instruction* ins, Syntax** args, int args_s) {
     return it;
 }
 
-mapresult* singleMapper(result* r, void* data) {
-    #define ins ((Instruction*)data)
-    #define rad ((ResArrD*)r->data)
-    #define rarr ((result**)rad->arr)
+mapresult* singleMapper(result* r, DataUnion data) {
+    #define ins ((Instruction*)data.ptr)
+    #define rad ((ResArrD*)r->data.ptr)
+    #define rarr (rad->arr)
     if (r->data_type != RES_ARR) {
         puts("WTF map did not return an array");
         exit(3);
@@ -24,18 +24,20 @@ mapresult* singleMapper(result* r, void* data) {
     mapresult* mr = malloc(sizeof(mapresult));
     mr->dealloc_old = false;
     void** a = malloc(sizeof(void*));
-    a[0] = rarr[2]->data;
+    a[0] = ((result*)rarr[2].ptr)->data.ptr;
     Syntax* syn = create_syntax(
         INSTRUCTION,
         INSTRUCTION_ITEM_TYPE,
-        create_insitem(ins, (Syntax**)a, 1)
+        (DataUnion){ .ptr = create_insitem(ins, (Syntax**)a, 1) }
     );
-    mr->res = create_result(SYNTAX_TYPE, syn);
-    free(rad->arr[2]);
-    rad->arr[2] = NULL;
+    mr->res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
+    free(rarr[2].ptr);
+    rarr[2].ptr = NULL;
     deallocate_result(r);
     return mr;
     #undef ins
+    #undef rad
+    #undef rarr
 }
 parser* createSingle(Instruction* ins, parser* arg) {
     parser** _seqArr = malloc( 4 * sizeof(parser*) );
@@ -45,14 +47,15 @@ parser* createSingle(Instruction* ins, parser* arg) {
     _seqArr[3] = optionalWhitespace;
     return map(
         sequenceOf(_seqArr, 4),
-        &singleMapper, false, ins
+        singleMapper, false, (DataUnion){ .ptr = ins }
     );
 }
 
-mapresult* doubleMapper(result* r, void* data) {
-    #define ins ((Instruction*)data)
-    #define rad ((ResArrD*)r->data)
-    #define rarr ((result**)rad->arr)
+mapresult* doubleMapper(result* r, DataUnion data) {
+    #define ins ((Instruction*)data.ptr)
+    #define rad ((ResArrD*)r->data.ptr)
+    #define darr rad->arr
+    #define rarr(x) ((result*)(rad->arr[x].ptr))
     if (r->data_type != RES_ARR) {
         puts("WTF map did not return an array");
         exit(3);
@@ -60,21 +63,24 @@ mapresult* doubleMapper(result* r, void* data) {
     mapresult* mr = malloc(sizeof(mapresult));
     mr->dealloc_old = false;
     Syntax** _pr = malloc(2 * sizeof(Syntax*));
-    _pr[0] = rarr[2]->data;
-    _pr[1] = rarr[4]->data;
-    free(rad->arr[2]);
-    rad->arr[2] = NULL;
-    free(rad->arr[4]);
-    rad->arr[4] = NULL;
+    _pr[0] = rarr(2)->data.ptr;
+    _pr[1] = rarr(4)->data.ptr;
+    free(darr[2].ptr);
+    darr[2].ptr = NULL;
+    free(darr[4].ptr);
+    darr[4].ptr = NULL;
     Syntax* syn = create_syntax(
         INSTRUCTION,
         INSTRUCTION_ITEM_TYPE,
-        create_insitem(ins, _pr, 2)
+        (DataUnion){ .ptr = create_insitem(ins, _pr, 2) }
     );
-    mr->res = create_result(SYNTAX_TYPE, syn);
+    mr->res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
     deallocate_result(r);
     return mr;
     #undef ins
+    #undef rad
+    #undef darr
+    #undef rarr
 }
 parser* createDouble(Instruction* ins, parser* arg1, parser* arg2) {
     parser** _seqArr = malloc( 6 * sizeof(parser*));
@@ -86,14 +92,15 @@ parser* createDouble(Instruction* ins, parser* arg1, parser* arg2) {
     _seqArr[5] = optionalWhitespace;
     return map(
         sequenceOf(_seqArr, 6),
-        &doubleMapper, false, ins
+        doubleMapper, false, (DataUnion){ .ptr = ins }
     );
 }
 
-mapresult* tripleMapper(result* r, void* data) {
-    #define ins ((Instruction*)data)
-    #define rad ((ResArrD*)r->data)
-    #define rarr ((result**)rad->arr)
+mapresult* tripleMapper(result* r, DataUnion data) {
+    #define ins ((Instruction*)data.ptr)
+    #define rad ((ResArrD*)r->data.ptr)
+    #define darr rad->arr
+    #define rarr(x) ((result*)(rad->arr[x].ptr))
     if (r->data_type != RES_ARR) {
         puts("WTF map did not return an array");
         exit(3);
@@ -101,24 +108,27 @@ mapresult* tripleMapper(result* r, void* data) {
     mapresult* mr = malloc(sizeof(mapresult));
     mr->dealloc_old = false;
     Syntax** _pr = malloc(3 * sizeof(Syntax*));
-    _pr[0] = rarr[2]->data;
-    _pr[1] = rarr[4]->data;
-    _pr[2] = rarr[6]->data;
-    free(rad->arr[2]);
-    rad->arr[2] = NULL;
-    free(rad->arr[4]);
-    rad->arr[4] = NULL;
-    free(rad->arr[6]);
-    rad->arr[6] = NULL;
+    _pr[0] = rarr(2)->data.ptr;
+    _pr[1] = rarr(4)->data.ptr;
+    _pr[2] = rarr(6)->data.ptr;
+    free(darr[2].ptr);
+    darr[2].ptr = NULL;
+    free(darr[4].ptr);
+    darr[4].ptr = NULL;
+    free(darr[6].ptr);
+    darr[6].ptr = NULL;
     Syntax* syn = create_syntax(
         INSTRUCTION,
         INSTRUCTION_ITEM_TYPE,
-        create_insitem(ins, _pr, 3)
+        (DataUnion){ .ptr = create_insitem(ins, _pr, 3) }
     );
-    mr->res = create_result(SYNTAX_TYPE, syn);
+    mr->res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
     deallocate_result(r);
     return mr;
     #undef ins
+    #undef rad
+    #undef darr
+    #undef rarr
 }
 parser* createTriple(Instruction* ins, parser* arg1, parser* arg2, parser* arg3) {
     parser** _seqArr = malloc(8 * sizeof(parser*));
@@ -132,21 +142,21 @@ parser* createTriple(Instruction* ins, parser* arg1, parser* arg2, parser* arg3)
     _seqArr[7] = optionalWhitespace;
     return map(
         sequenceOf(_seqArr, 8),
-        &tripleMapper, false, ins
+        tripleMapper, false, (DataUnion){ .ptr = ins }
     );
 }
 
-mapresult* noArgsMapper(result* r, void* data) {
-    #define ins ((Instruction*)data)
+mapresult* noArgsMapper(result* r, DataUnion data) {
+    #define ins ((Instruction*)data.ptr)
     mapresult* mr = malloc(sizeof(mapresult));
     mr->dealloc_old = true;
     mr->res = create_result(
         SYNTAX_TYPE,
-        create_syntax(
+        (DataUnion){ .ptr = create_syntax(
             INSTRUCTION,
             INSTRUCTION_ITEM_TYPE,
-            create_insitem(ins, NULL, 0)
-        )
+            (DataUnion){ .ptr = create_insitem(ins, NULL, 0) }
+        )}
     );
     return mr;
     #undef ins
@@ -154,7 +164,7 @@ mapresult* noArgsMapper(result* r, void* data) {
 parser* fNoArgs(Instruction* ins) {
     return map(
         then( upperLowerStrP(ins->mnemonic), optionalWhitespace, false),
-        &noArgsMapper, false, ins
+        noArgsMapper, false, (DataUnion){ .ptr = ins }
     );
 }
 
@@ -211,21 +221,21 @@ parser* fLitOffReg(Instruction* ins) {
 }
 
 insParserCreator typeCreatorMap[] = {
-    &fLitReg,
-    &fRegLit,
-    &fRegLit,
-    &fRegReg,
-    &fRegMem,
-    &fMemReg,
-    &fLitMem,
-    &fLitMem,
-    &fRegPtrReg,
-    &fLitOffReg,
-    &fNoArgs,
-    &fSingleReg,
-    &fSingleLit,
-    &fRegRegPtr,
-    &fSingleMem,
-    &fRegPtr,
-    &fSingleLit
+    fLitReg,
+    fRegLit,
+    fRegLit,
+    fRegReg,
+    fRegMem,
+    fMemReg,
+    fLitMem,
+    fLitMem,
+    fRegPtrReg,
+    fLitOffReg,
+    fNoArgs,
+    fSingleReg,
+    fSingleLit,
+    fRegRegPtr,
+    fSingleMem,
+    fRegPtr,
+    fSingleLit
 };
