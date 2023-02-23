@@ -16,7 +16,10 @@
 
 // log.h
 #ifdef DEBUG
-#define LOG(x) C_DEBUG_MODE && x
+#define LOG(x)  _Pragma("GCC diagnostic push") \
+                _Pragma("GCC diagnostic ignored \"-Wunused-value\"") \
+                C_DEBUG_MODE && x; \
+                _Pragma("GCC diagnostic pop")
 #define assert(x) if (!(x)) { printf("Assertion %s, Failed\n", #x); exit(3); }
 #else
 #define LOG(x)
@@ -36,8 +39,8 @@
 
 // Typedefs
 
-//types.h
-typedef enum {
+// types.h
+typedef enum Types {
     REGISTER,
     HEX_LITERAL,
     VARIABLE,
@@ -69,9 +72,10 @@ typedef enum {
 } Types;
 
 // syntax.h
-typedef struct {
+
+typedef struct Syntax {
     Types type;
-    void* value;
+    DataUnion value;
     int v_type;
 } Syntax;
 
@@ -203,8 +207,8 @@ char* type_to_str(Types type);
 // syntax.h
 char* syntax_to_string(Syntax* syn, bool nl);
 char* nsyntax_to_string(Syntax* syn);
-Syntax* create_syntax(Types stype, int v_type, void* value);
-mapresult* syntax_mapper(result* res, void* data);
+Syntax* create_syntax(Types stype, int v_type, DataUnion value);
+mapresult* syntax_mapper(result* res, DataUnion data);
 
 // structure_p.h
 parser* create_structure_parser();
