@@ -3,7 +3,7 @@
 
 #include<stdint.h>
 
-typedef enum {
+typedef enum InstructionType {
     litReg,
     regLit,
     regLit8,
@@ -23,7 +23,7 @@ typedef enum {
     singleLit8
 } InstructionType;
 
-typedef struct {
+typedef struct Instruction {
     char tag[17];
     uint8_t opcode;
     InstructionType type;

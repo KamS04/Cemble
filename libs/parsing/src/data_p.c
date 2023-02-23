@@ -24,11 +24,11 @@ void _data_koro(koroctx* kctx) {
         _datP = strP("data");
     }
     crYield(_datP);
-    crYield(KMDAT(size), int, bit8Or16, data);
+    crYield(KMDAT(size), int, bit8Or16, data.in);
     crYield(whitespace);
     LOG(puts("data koro: data_size"));
 
-    crYield(KMDAT(name), char*, validIdentifier, data);
+    crYield(KMDAT(name), char*, validIdentifier, data.ptr);
     LOG(puts("data koro: valid_iden"));
     cruYield(betWEq);
     LOG(puts("data koro: betweq"));
@@ -37,7 +37,7 @@ void _data_koro(koroctx* kctx) {
 
     #ifdef SINGLE_THREADED_ONLY
     static ResArrD* rad;
-    crYield(rad, ResArrD*, commaSepHex, data);
+    crYield(rad, ResArrD*, commaSepHex, data.ptr);
     LOG(puts("data koro: rad bro")); 
     cruYield(cloCurl);
 
@@ -53,9 +53,10 @@ void _data_koro(koroctx* kctx) {
     // evile, result is actually a ResArrD* pointer, but we're pretending its a Syntax**
     // in order to save in the context/data
     // truly vile
-    crYield(KMDAT(values), Syntax**, commaSepHex, data);
+    crYield(KMDAT(values), Syntax**, commaSepHex, data.ptr);
     LOG(puts("data koro: rad bro")); 
     cruYield(cloCurl);
+    // TODO same problem as the other one refer to my other rant
 
     // Remember KMDAT(values) is a Syntax** pointer, but we saved a ResArrD* pointer inside it
     // be oh so fuckiiiiiing careful bro
@@ -64,8 +65,8 @@ void _data_koro(koroctx* kctx) {
     KMDAT(val_len) = rad->a_len;
     KMDAT(values) = malloc(rad->a_len * sizeof(Syntax**));
     for (int i = 0; i < rad->a_len; i++) {
-        result* ri = rad->arr[i];
-        KMDAT(values)[i] = ri->data;
+        result* ri = rad->arr[i].ptr;
+        KMDAT(values)[i] = ri->data.ptr;
         free(ri);
     }
     free(rad);
@@ -74,12 +75,12 @@ void _data_koro(koroctx* kctx) {
     Syntax* syn = create_syntax(
         DATA,
         DATA_ELEMENT_TYPE,
-        KDDAT
+        (DataUnion){ .ptr = KDDAT }
     );
-    result* res = create_result(SYNTAX_TYPE, syn);
+    result* res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
     crReturn(res);
 }
 
 parser* create_data_parser() {
-    return korop(&_data_koro, false);
+    return korop(_data_koro, false);
 }

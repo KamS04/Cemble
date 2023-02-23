@@ -1,6 +1,5 @@
 #ifndef KOROLIB_HEADER
 #define KOROLIB_HEADER
-
 #include<stdbool.h>
 #include<stdlib.h>
 
@@ -20,7 +19,7 @@
 
 #define ALLOCATE_DAT_NULL() KDDAT = malloc(sizeof(_kdtype));
 
-#define ALLOCATE_DAT_DEALLOC(dealloc) _KCTX->deallocer = dealloc; \
+#define ALLOCATE_DAT_DEALLOC(deallocer) _KCTX->dealloc = deallocer; \
                                 ALLOCATE_DAT_NULL()
 
 #define ALLOCATE_DAT(...) GET_1_MACRO(_0, ##__VA_ARGS__, ALLOCATE_DAT_DEALLOC, ALLOCATE_DAT_NULL)(__VA_ARGS__)
@@ -64,7 +63,7 @@
                     _KCTX->fin = true; \
                     return; }
 
-typedef struct {
+typedef struct koroctx {
     int state;
     void* yield;
     void* fin_result;
@@ -77,5 +76,7 @@ typedef struct {
 } koroctx;
 
 koroctx* default_kctx();
+
+typedef void(*koroutinefunc_t)(koroctx*);
 
 #endif

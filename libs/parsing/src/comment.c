@@ -12,11 +12,11 @@ void _commentKoro(koroctx* kctx) {
     crBegin;
     crYield(optionalWhitespace);
     crYield(semiColon);
-    crYield(KDDAT, char*, _euEOL, data);
+    crYield(KDDAT, char*, _euEOL, data.ptr);
     cruYield(optionalWhitespace);
 
-    Syntax* syn = create_syntax(COMMENT, STRING, KDDAT);
-    result* res = create_result(SYNTAX_TYPE, syn);
+    Syntax* syn = create_syntax(COMMENT, STRING, (DataUnion){ .ptr = KDDAT });
+    result* res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
     crReturn(res);
 }
 
@@ -28,5 +28,5 @@ parser* create_comment_parser() {
         _euEOL = everythingUntil(_euEOLC, true);
     }
 
-    return korop(&_commentKoro, false);
+    return korop(_commentKoro, false);
 }

@@ -6,13 +6,13 @@
 #include "instruction.h"
 
 // Types.LABEL
-typedef struct {
+typedef struct SymbolicElement {
     char* name;
 } SymbolicElement;
 #define SYMBOLIC_ELEMENT_TYPE 5
 
 // Types.DATA
-typedef struct {
+typedef struct DataElement {
     int size;
     bool is_export;
     char* name;
@@ -21,14 +21,14 @@ typedef struct {
 } DataElement;
 #define DATA_ELEMENT_TYPE 6
 
-typedef struct {
+typedef struct SSynPair {
     char* key;
     Syntax* val;
 } SSynPair;
 #define SSYN_PAIR_TYPE 7
 
 // Types.STRUCTURE
-typedef struct {
+typedef struct StructureElement {
     bool is_export;
     char* name;
     SSynPair** members;
@@ -37,7 +37,7 @@ typedef struct {
 #define STRUCTURE_ELEMENT_TYPE 8
 
 // Types.CONSTANT
-typedef struct {
+typedef struct ConstantElement {
     bool is_export;
     char* name;
     Syntax* value;
@@ -45,7 +45,7 @@ typedef struct {
 #define CONSTANT_ELEMENT_TYPE 9
 
 // Types.INTERPRET_AS_SINGLE
-typedef struct {
+typedef struct InterpretSingle {
     char* structure;
     Syntax* symbol;
     char* property;
@@ -53,7 +53,7 @@ typedef struct {
 #define INTERPRET_SINGLE_TYPE 10
 
 // Types.INTERPRET_AS_ARRAY
-typedef struct {
+typedef struct InterpretArray {
     char* structure;
     Syntax* index;
     Syntax* symbol;
@@ -62,7 +62,7 @@ typedef struct {
 #define INTERPRET_ARRAY_TYPE 11 
 
 // Types.INSTRUCTION
-typedef struct {
+typedef struct InstructionItem {
     Instruction* ins;
     Syntax** args;
     int args_s;
@@ -70,7 +70,7 @@ typedef struct {
 #define INSTRUCTION_ITEM_TYPE 12
 
 // Types.BINARY_OPERATION
-typedef struct {
+typedef struct BinaryOperation {
     char operation;
     Syntax* a;
     Syntax* b;

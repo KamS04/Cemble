@@ -20,18 +20,36 @@ char* syntax_to_string(Syntax* syn, bool nl) {
         vidx = 38;
     }
 
-    void* s = syn->value;
+    char* tp = typeStrs[syn->type];
+
+    // int l = snprintf(NULL, 0, format, tp, syn->v_type, s) + 1;
+    // char* sou = malloc(l * sizeof(char));
+    // sprintf(sou, format, tp, syn->v_type, s);
+    // snprintf(sou, l, format, tp, syn->v_type, s);
+
+    int l;
+    char* sou;
+
     switch(syn->v_type) {
         case STRING:
+            l = snprintf(NULL, 0, format, tp, syn->v_type, syn->value.ptr);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, syn->value.ptr);
             break;
         case INTEGER:
             format[vidx] ='d';
+            l = snprintf(NULL, 0, format, tp, syn->v_type, syn->value.in);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, syn->value.in);
             break;
         case CHAR:
             format[vidx] = 'c';
+            l = snprintf(NULL, 0, format, tp, syn->v_type, syn->value.ch);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, syn->value.ch);
             break;
         case RES_ARR: {
-            ResArrD* _rad = syn->value;
+            ResArrD* _rad = syn->value.ptr;
             char** _vi = malloc( _rad->a_len * sizeof(char*) );
             int f_size = 0;
             
@@ -39,11 +57,11 @@ char* syntax_to_string(Syntax* syn, bool nl) {
             if (_rad->all_same_type) {
                 if (_rad->all_type == SYNTAX_TYPE) {
                     for (int i = 0; i < _rad->a_len; i++) {
-                        _vi[i] = syntax_to_string(_rad->arr[i], false);
+                        _vi[i] = syntax_to_string(_rad->arr[i].ptr, false);
                         f_size += strlen(_vi[i]);
                     }
                 } else {
-                    r = create_result(_rad->all_type, NULL);
+                    r = create_result(_rad->all_type, (DataUnion){ .ptr = NULL });
                     for (int i = 0; i < _rad->a_len; i++) {
                         r->data = _rad->arr[i];
                         _vi[i] = dresult_to_string(r, false);
@@ -52,9 +70,9 @@ char* syntax_to_string(Syntax* syn, bool nl) {
                 }
             } else {
                 for (int i = 0; i < _rad->a_len; i++) {
-                    r = _rad->arr[i];
+                    r = _rad->arr[i].ptr;
                     if (r->data_type == SYNTAX_TYPE) {
-                        _vi[i] = syntax_to_string(r->data, false);
+                        _vi[i] = syntax_to_string(r->data.ptr, false);
                     } else {
                         _vi[i] = dresult_to_string(r, false);
                     }
@@ -65,7 +83,7 @@ char* syntax_to_string(Syntax* syn, bool nl) {
             if (_rad->a_len > 1) {
                 f_size += (_rad->a_len - 1) * 2;
             }
-            s = malloc( f_size *  sizeof(f_size) );
+            char* s = malloc( f_size *  sizeof(f_size) );
 
             int c_off = 0;
             for (int i = 0; i < _rad->a_len; i++) {
@@ -78,25 +96,33 @@ char* syntax_to_string(Syntax* syn, bool nl) {
                 }
             }
             ((char*)s)[c_off] = '\0';
+
+            l = snprintf(NULL, 0, format, tp, syn->v_type, s);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, s);
+            free(s);
         }
         case SYNTAX_TYPE: {
-            s = syntax_to_string((Syntax*)syn->value, false);
+            char* s = syntax_to_string((Syntax*)syn->value.ptr, false);
+            l = snprintf(NULL, 0, format, tp, syn->v_type, s);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, s);
+            free(s);
             break;
         }
         default: {
-            bool su = convert_ret_item_to_str(syn->value, syn->v_type, &s);
+            char* s;
+            bool su = convert_ret_item_to_str(syn->value.ptr, syn->v_type, &s);
             if (!su) {
                 s = "/UNKNOWN DTYPE/";
             }
+            l = snprintf(NULL, 0, format, tp, syn->v_type, s);
+            sou = malloc(l * sizeof(char));
+            sprintf(sou, format, tp, syn->v_type, s);
+            free(s);
         }
     }
 
-    char* tp = typeStrs[syn->type];
-
-    int l = snprintf(NULL, 0, format, tp, syn->v_type, s) + 1;
-    char* sou = malloc(l * sizeof(char));
-    sprintf(sou, format, tp, syn->v_type, s);
-    snprintf(sou, l, format, tp, syn->v_type, s);
     return sou;
 }
 
@@ -104,7 +130,7 @@ char* nsyntax_to_string(Syntax* syn) {
     return syntax_to_string(syn, true);
 }
 
-Syntax* create_syntax(Types stype, int v_type, void* value) {
+Syntax* create_syntax(Types stype, int v_type, DataUnion value) {
     Syntax* v = malloc(sizeof(Syntax));
     v->type = stype;
     v->v_type = v_type;
@@ -112,16 +138,16 @@ Syntax* create_syntax(Types stype, int v_type, void* value) {
     return v;
 }
 
-mapresult* syntax_mapper(result* res, void* data) {
+mapresult* syntax_mapper(result* res, DataUnion data) {
     mapresult* it = malloc(sizeof(mapresult));
     it->dealloc_old = false;
 
     result* nres = malloc(sizeof(result));
     nres->data_type = SYNTAX_TYPE;
 
-    Syntax* syn = create_syntax((Types) data, res->data_type, res->data);
+    Syntax* syn = create_syntax((Types) data.in, res->data_type, res->data);
 
-    nres->data = syn;
+    nres->data.ptr = syn;
     it->res = nres;
 
     return it;

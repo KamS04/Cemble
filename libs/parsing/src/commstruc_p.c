@@ -32,8 +32,8 @@ mapresult* _b8o16_mapper(result* re_in, void* data) {
     mapresult* ti = malloc(sizeof(mapresult));
     ti->dealloc_old = true;
     int si;
-    sscanf(re_in->data, "%d", &si);
-    ti->res = create_result(INTEGER, si);
+    sscanf(re_in->data.ptr, "%d", &si);
+    ti->res = create_result(INTEGER, (DataUnion){ .in = si });
     return ti;
 }
 
@@ -50,7 +50,7 @@ void init_commstruct_parsers() {
 
     _b8o16[0] = strP("8");
     _b8o16[1] = strP("16");
-    bit8Or16 = map(choice(_b8o16, 2), &_b8o16_mapper, false, NULL);
+    bit8Or16 = map(choice(_b8o16, 2), _b8o16_mapper, false, (DataUnion){ .ptr = NULL });
 
     opAng = charP('<');
     cloAng = charP('>');

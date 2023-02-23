@@ -2,19 +2,19 @@
 #define OBJECT_ARRAY_LIST_HEADER
 #include<stdbool.h>
 
-typedef enum {
+typedef enum PType {
     CharAL,
     IntAL,
     PtrAL
 } PType;
 
-typedef union {
+typedef union PNull {
     int inullv;
     char cnullv;
     void* pnullv;
 } PNull;
 
-typedef struct {
+typedef struct MutArrList {
     int tsize;
     int csize;
     int stsize;

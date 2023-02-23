@@ -40,14 +40,14 @@ void _key_val(koroctx* kctx) {
     #define _krtype result
     ALLOCATE_DAT();
     crYield(optionalWhitespace);
-    crYield(KMDAT(key), char*, validIdentifier, data);
+    crYield(KMDAT(key), char*, validIdentifier, data.ptr);
     cruYield(colon);
 
-    crYield(KMDAT(val), Syntax*, hexLiteral, data);
+    crYield(KMDAT(val), Syntax*, hexLiteral, data.ptr);
 
     cruYield(optionalWhitespace);
 
-    result* res = create_result(SSYN_PAIR_TYPE, KDDAT);
+    result* res = create_result(SSYN_PAIR_TYPE, (DataUnion){ .ptr = KDDAT });
     // char* ss;
     // convert_ret_item_to_str(KDDAT, SSYN_PAIR_TYPE, &ss);
     crReturn(res);
@@ -60,20 +60,21 @@ r5,  r6, r7, r8
 fp, sp
 */
 
-mapresult* labelMapper(result* r, void* data) {
+mapresult* labelMapper(result* r, DataUnion data) {
     mapresult* mr = malloc(sizeof(mapresult));
     mr->dealloc_old = true;
-    ResArrD* rad = r->data;
-    char* lname = ((result**)rad->arr)[0]->data;
-    free(rad->arr[0]);
-    rad->arr[0] = NULL;
+    ResArrD* rad = r->data.ptr;
+    char* lname = ((result*)(rad->arr[0].ptr))->data.ptr;
+    // char* lname = ((result**)rad->arr)[0]->data;
+    free(rad->arr[0].ptr);
+    rad->arr[0].ptr = NULL;
     mr->res = create_result(
         SYNTAX_TYPE,
-        create_syntax(
+        (DataUnion){ .ptr = create_syntax(
             LABEL,
             STRING,
-            lname
-        )
+            (DataUnion){ .ptr = lname }
+        )}
     );
     return mr;
 }
@@ -90,16 +91,16 @@ void init_common_ass_parsers() {
         strP("sp"), strP("fp"), strP("mb"), strP("im")
     };
     memcpy(rs, trs, 14 * sizeof(parser*));
-    registers = map(choice(rs, 14), &syntax_mapper, false, REGISTER);
+    registers = map(choice(rs, 14), &syntax_mapper, false, (DataUnion){ .in = (int)REGISTER });
 
     hexDigit = regexP("^[0-9a-fA-F]");
-    hexLiteral = map(regexP("^\\$[0-9a-fA-F]+"), &syntax_mapper, false, HEX_LITERAL);
+    hexLiteral = map(regexP("^\\$[0-9a-fA-F]+"), &syntax_mapper, false, (DataUnion){ .in = (int)HEX_LITERAL });
 
-    address = map(regexP("^&[0-9a-fA-F]+"), &syntax_mapper, false, ADDRESS);
+    address = map(regexP("^&[0-9a-fA-F]+"), &syntax_mapper, false, (DataUnion){ .in = (int)ADDRESS });
 
     validIdentifier = regexP("^[a-zA-Z_][a-zA-Z0-9_]*");
 
-    variable = map(then(charP('!'), validIdentifier, false), &syntax_mapper, false, VARIABLE);
+    variable = map(then(charP('!'), validIdentifier, false), &syntax_mapper, false, (DataUnion){ .in = (int)VARIABLE });
 
     peek = lookAhead(anyChar);
 
@@ -108,7 +109,7 @@ void init_common_ass_parsers() {
     l[1] = charP(':');
     l[2] = optionalWhitespace;
     // Get first item out of array for label
-    label = map(sequenceOf(l, 3), &labelMapper, false, NULL);
+    label = map(sequenceOf(l, 3), &labelMapper, false, (DataUnion){ .ptr = NULL });
 
     keyValP = korop(&_key_val, false);
     commSepKVP = commaSeparated(keyValP);

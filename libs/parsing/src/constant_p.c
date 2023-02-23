@@ -15,9 +15,8 @@ void _constant_coro(koroctx* kctx) {
     #define _krtype result
     ALLOCATE_DAT();
 
-    void* q;
-    crYield(q, void*, posPlus);
-    KMDAT(is_export) = q != NULL;
+    crYield(posPlus);
+    KMDAT(is_export) = KLAST != NULL;
     
     if (_consStr == NULL) {
         _consStr = strP("constant");
@@ -25,20 +24,20 @@ void _constant_coro(koroctx* kctx) {
     crYield(_consStr);
     crYield(whitespace);
 
-    crYield(KMDAT(name), char*, validIdentifier, data);
+    crYield(KMDAT(name), char*, validIdentifier, data.ptr);
     
     cruYield(betWEq);
 
-    crYield(KMDAT(value), Syntax*, hexLiteral, data);
+    crYield(KMDAT(value), Syntax*, hexLiteral, data.ptr);
 
     cruYield(optionalWhitespace);
 
     Syntax* s = create_syntax(
         CONSTANT,
         CONSTANT_ELEMENT_TYPE,
-        KDDAT
+        (DataUnion){ .ptr = KDDAT }
     );
-    result* res = create_result(SYNTAX_TYPE, s);
+    result* res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = s });
     crReturn(res);
 }
 

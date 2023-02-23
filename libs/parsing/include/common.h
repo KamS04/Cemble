@@ -17,7 +17,6 @@ extern parser* nLineOrEnd;
 
 parser* optionalWhitespaceSurrounded(parser* p);
 parser* commaSeparated(parser* p);
-parser* john_cena();
 
 void init_common_ass_parsers();
 #endif

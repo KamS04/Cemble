@@ -1,7 +1,7 @@
 #ifndef TYPES_HEADER
 #define TYPES_HEADER
 
-typedef enum {
+typedef enum Types {
     REGISTER,
     HEX_LITERAL,
     VARIABLE,

@@ -5,17 +5,17 @@
 #include<stdbool.h>
 #define SYNTAX_TYPE 4
 
-typedef struct {
+typedef struct Syntax {
     Types type;
-    void* value;
+    DataUnion value;
     int v_type;
 } Syntax;
 
 char* syntax_to_string(Syntax* syn, bool nl);
 char* nsyntax_to_string(Syntax* syn);
 
-Syntax* create_syntax(Types stype, int v_type, void* value);
+Syntax* create_syntax(Types stype, int v_type, DataUnion value);
 
-mapresult* syntax_mapper(result* res, void* data);
+mapresult* syntax_mapper(result* res, DataUnion data);
 
 #endif

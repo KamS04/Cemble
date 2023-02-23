@@ -7,10 +7,12 @@
 
 bool convert_ret_item_to_str(void* item, int type, char** out) {
     switch (type) {
-        case SYMBOLIC_ELEMENT_TYPE:            
-            *out = malloc( (26 + strlen(((SymbolicElement*)item)->name)) * sizeof(char));
-            sprintf(*out, "SymbolicElement { name: %s }", ((SymbolicElement*)item)->name);
+        case SYMBOLIC_ELEMENT_TYPE: {
+            SymbolicElement* x = item;
+            *out = malloc( (26 + strlen(x->name) ) * sizeof(char) );
+            sprintf(*out, "SymbolicElement { name: %s }", x->name);
             break;
+        }
         case SSYN_PAIR_TYPE: {
             SSynPair* x = item;
             char* sy = syntax_to_string(x->val, false);
@@ -26,12 +28,12 @@ bool convert_ret_item_to_str(void* item, int type, char** out) {
             char* format = "{ %s %c %s }";
             char* a; char* b;
             if (x->a->v_type == BINARY_OPERATION_TYPE) {
-                convert_ret_item_to_str(x->a->value, BINARY_OPERATION_TYPE, &a);
+                convert_ret_item_to_str(x->a->value.ptr, BINARY_OPERATION_TYPE, &a);
             } else {
                 a = syntax_to_string(x->a, false);
             }
             if (x->b->v_type == BINARY_OPERATION_TYPE) {
-                convert_ret_item_to_str(x->b->value, BINARY_OPERATION_TYPE, &b);
+                convert_ret_item_to_str(x->b->value.ptr, BINARY_OPERATION_TYPE, &b);
             } else {
                 b = syntax_to_string(x->b, false);
             }
@@ -95,15 +97,15 @@ bool convert_ret_item_to_str(void* item, int type, char** out) {
             char* format;
             int fstr_size = 0;
             for (int i = 0; i < x->val_len; i++) {
-                fstr_size += strlen((char*) x->values[i]->value);
+                fstr_size += strlen((char*) x->values[i]->value.ptr);
                 fstr_size += 2;
             }
             fstr_size -= 1;
             char* v_ = malloc(fstr_size * sizeof(char));
             fstr_size = 0;
             for (int i = 0; i < x->val_len; i++) {
-                strcpy(v_ + fstr_size, x->values[i]->value);
-                fstr_size += strlen(x->values[i]->value);
+                strcpy(&v_[fstr_size], x->values[i]->value.ptr);
+                fstr_size += strlen(x->values[i]->value.ptr);
                 if (i + 1 < x->val_len) {
                     v_[fstr_size++] = ',';
                     v_[fstr_size++] = ' ';

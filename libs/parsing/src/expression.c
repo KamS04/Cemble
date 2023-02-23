@@ -17,7 +17,7 @@ parser* operator;
 parser* _opArr[4];
 parser* sqBrackParser = NULL;
 
-typedef enum {
+typedef enum ExprState {
     OPEN_BRACKET,
     OPERATOR_OR_CLOSE_BRACKET,
     ELEMENT_OR_OPEN_BRACKET
@@ -55,18 +55,18 @@ BinaryOperation* binOpify(MAL elements, MAL operators) {
             cBO->b = create_syntax(
                 BINARY_OPERATION,
                 BINARY_OPERATION_TYPE,
-                crebinop(
+                (DataUnion){ .ptr = crebinop(
                     cBO->b,
                     nEle,
                     nOp
-                )
+                )}
             );
         } else {
             cBO = crebinop(
                 create_syntax(
                     BINARY_OPERATION,
                     BINARY_OPERATION_TYPE,
-                    cBO
+                    (DataUnion){ .ptr = cBO }
                 ),
                 nEle,
                 nOp
@@ -81,7 +81,7 @@ BinaryOperation* binOpify(MAL elements, MAL operators) {
     elements@ArrayList<Syntax*>
     operators@ArrayList<char>
 */
-typedef struct {
+typedef struct ExprKData {
     ExprState state;
     MAL elements;
     MAL operators;
@@ -99,11 +99,11 @@ void _exprKoro(koroctx* kctx) {
     KMDAT(operators) = AllocateCharAL(10, 10, 1, '\0');
 
     while (true) {
-        crYield(KMDAT(next_char), char, peek, data);
+        crYield(KMDAT(next_char), char, peek, data.ch);
 
         if (KMDAT(state) == OPEN_BRACKET) {
             crYield(opBr);
-            crYield(nextItem, Syntax*, expressionParser, data);
+            crYield(nextItem, Syntax*, expressionParser, data.ptr);
             PAPPEND(KMDAT(elements), nextItem);
             cruYield(cloBr);
             KMDAT(state) = OPERATOR_OR_CLOSE_BRACKET;
@@ -114,7 +114,7 @@ void _exprKoro(koroctx* kctx) {
             if (KMDAT(next_char) == '(') {
                 KMDAT(state) = OPEN_BRACKET;
             } else {
-                crYield(nextItem, Syntax*, expressionElement, data);
+                crYield(nextItem, Syntax*, expressionElement, data.ptr);
                 PAPPEND(KMDAT(elements), nextItem);
                 cruYield(optionalWhitespace);
                 KMDAT(state) = OPERATOR_OR_CLOSE_BRACKET;
@@ -123,8 +123,8 @@ void _exprKoro(koroctx* kctx) {
             if (KMDAT(next_char) == ')' || KMDAT(next_char) == ']') {
                 break;
             }
-            crYield(nextItem, Syntax*, operator, data);
-            CAPPEND(KMDAT(operators), (char)nextItem->value);
+            crYield(nextItem, Syntax*, operator, data.ptr);
+            CAPPEND(KMDAT(operators), (char)nextItem->value.ch);
             cruYield(optionalWhitespace);
             KMDAT(state) = ELEMENT_OR_OPEN_BRACKET;
         }
@@ -142,7 +142,7 @@ void _exprKoro(koroctx* kctx) {
         nextItem = create_syntax(
             BINARY_OPERATION,
             BINARY_OPERATION_TYPE,
-            bo
+            (DataUnion){ .ptr = bo }
         );
     }
 
@@ -151,7 +151,7 @@ void _exprKoro(koroctx* kctx) {
     free(AL(KMDAT(operators)));
     free(KMDAT(operators));
 
-    result* res = create_result(SYNTAX_TYPE, nextItem);
+    result* res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = nextItem });
     crReturn(res);
 }
 
@@ -163,10 +163,10 @@ void _inieph() {
     _exEleArr[3] = variable;
     expressionElement = choice(_exEleArr, 4);
 
-    _opArr[0] = map( charP('+'), &syntax_mapper, false, OP_PLUS );
-    _opArr[1] = map( charP('-'), &syntax_mapper, false, OP_PLUS );
-    _opArr[2] = map( charP('*'), &syntax_mapper, false, OP_PLUS );
-    _opArr[3] = map( charP('/'), &syntax_mapper, false, OP_PLUS );
+    _opArr[0] = map( charP('+'), syntax_mapper, false, (DataUnion){ .in = (int)OP_PLUS });
+    _opArr[1] = map( charP('-'), syntax_mapper, false, (DataUnion){ .in = (int)OP_MINUS });
+    _opArr[2] = map( charP('*'), syntax_mapper, false, (DataUnion){ .in = (int)OP_MULTIPLY });
+    _opArr[3] = map( charP('/'), syntax_mapper, false, (DataUnion){ .in = (int)OP_INT_DIVISION });
     operator = choice(_opArr, 4);
 }
 
@@ -182,7 +182,7 @@ parser* create_sqbrac_parser() {
     if (sqBrackParser == NULL) {
         sqBrackParser = map(
             between(opSt, create_expression_parser(), cloSt),
-            &syntax_mapper, false, SQUARE_BRACKET_EXPRESSION
+            &syntax_mapper, false, (DataUnion){ .in = SQUARE_BRACKET_EXPRESSION }
         );
     }
     return sqBrackParser;
