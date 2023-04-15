@@ -9,7 +9,7 @@ typedef enum {
     MPtr
 } mtype;
 
-typedef struct {
+typedef struct SimpleEntry {
     char* key;
     union {
         int idat;
@@ -19,7 +19,7 @@ typedef struct {
 
 typedef void*(*sfunc)(size_t, void*, void*, int, int(*)(void*,void*));
 
-typedef struct {
+typedef struct SimpleMap {
     SimpleEntry* arr;
     int length;
     int clength;
@@ -35,12 +35,12 @@ Map simplemap_ptr(char* keys[], void** datas, int len);
 SimpleEntry* get_etm(Map map, char* key);
 void* gm_ptr(Map map, char* key);
 int gm_int(Map map, char* key);
-bool has_key(Map map, char* key);
+bool has_key_old(Map map, char* key);
 
 Map simplemap_int_incom(int final_len);
 Map simplemap_ptr_incom(int final_len);
 void add_ito(Map map, char* key, int data);
-void add_pto(Map map, char* key, void* data);
+void add_pto_old(Map map, char* key, void* data);
 void finish(Map map);
 
 #endif

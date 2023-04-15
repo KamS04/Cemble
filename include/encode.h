@@ -4,15 +4,21 @@
 #include<stdint.h>
 #include "assemblelib.h"
 #include "encoder.h"
+#include "context.h"
 
-uint16_t evaluate_node_core(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures, bool* borke);
-uint16_t evaluate_node(AssemblyContext* asmCon, Syntax* syn, Map symbols, Map structures);
+uint16_t hex_to_int16(char* hex);
+uint16_t eval_arith(uint16_t a, uint16_t b, char op);
 
-void encodeInstruction(uint8_t* mCode, AssemblyContext* asmCon, InstructionItem* iex);
+uint16_t core_node_evaluate(EvalContext *eval, Syntax *syn, uint8_t *state);
 
-void encodeData(uint8_t* mCode, AssemblyContext* asmCon, DataElement* dex);
-void encodeLitOrMem(uint8_t* mCode, AssemblyContext* asmCon, Syntax* lit);
-void encodeLit8OrMem(uint8_t* mCode, AssemblyContext* asmCon, Syntax* lit);
-void encodeReg(uint8_t* mCode, AssemblyContext* asmCon, Syntax* reg);
+int encoderOfData(uint8_t *mCode, EvalContext *econ, int *mCodeIdx, DataElement *dex);
+int encoderOfInstruction(uint8_t *mCode, EvalContext *econ, int *mCodeIdx, InstructionItem *iex);
+int encoderOfLitOrMem(uint8_t *mCode, EvalContext *econ, int *mCodeIdx, Syntax *lit, uint8_t *state);
+int encoderOfReg(uint8_t *mCode, EvalContext *econ, int *mCodeIdx, Syntax* reg, uint8_t *state);
+int encoderOfLit8(uint8_t *mCode, EvalContext *econ, int *mCodeIdx, Syntax *lit, uint8_t *state);
+
+#define UDEFS 1
+#define CLINE 2
+#define SUCC  3
 
 #endif

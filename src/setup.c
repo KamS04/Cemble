@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include "parselib.h"
 #include "assemblelib.h"
+#include "debugging.h"
 
 char* strsyntax(result* c, bool nl) {
     assert(c->data_type == SYNTAX_TYPE);
@@ -14,8 +15,8 @@ void dsyntax(result* c) {
         exit(3);
     }
     // TODO deallocate value inside of syntax
-    free(c->data.ptr);
-    free(c);
+    kfree(c->data.ptr);
+    kfree(c);
 }
 
 char* strssyn(result* c, bool nl) {
@@ -30,8 +31,8 @@ void dssyn(result* c) {
         exit(3);
     }
     // TODO deallocate value inside of SSynPair
-    free(c->data.ptr);
-    free(c);
+    kfree(c->data.ptr);
+    kfree(c);
 }
 
 void snd() {

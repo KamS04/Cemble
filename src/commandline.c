@@ -1,8 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-// #include<time.h>
-#include<sys/timeb.h>
+#include<stdint.h>
+
 #include "assemblelib.h"
 #include "parselib.h"
 #include "assembler.h"
@@ -11,90 +11,126 @@
 #include "setup.h"
 #include "filereader.h"
 
-typedef struct {
+typedef struct Options {
     bool debug;
     bool printAST;
     bool decimalAddrs;
-    char* file;
     char* output;
-    char* codeOffset;
+    uint16_t codeOffset;
     char* astFile;
+    char** files;
+    int len_f;
 } Options;
 
-typedef enum {
-    file,
-    output,
-    codeOffset,
-    astFile
+typedef enum LookingAt {
+    FILE_E,
+    OUTPUT,
+    CODEOFFSET,
+    ASTFILE
 } LookingAt;
 
-typedef enum {
-    EXPECTING_FLAG_OR_NAME,
+typedef enum OptParseState {
+    EXPECTING_FLAG,
+    EXPECTING_FLAG_OR_ARGUMENT,
     EXPECTING_ARGUMENT
 } OptParseState;
 
 void write_help() {
-    puts("printing help");
+    puts("Usage: fcasm [options]");
+    puts("\toptions:");
+    puts("\t\t-h, --help          Prints usage");
+    puts("\t\t-d                  Enables Debug mode");
+    puts("\t\t-p                  Prints AST after parse step");
+    puts("\t\t--dec               In Debug mode, print addresses as decimal values instead of hex");
+    puts("\t\t-f file1 [files...] Files to assemble");
+    puts("\t\t-o                  Output file");
+    puts("\t\t-c offset           Start address for code defaults to 0");
+    puts("\t\t-a file             Write AST to file");
 }
 
-void parse_arguments(int argc, char* argv[], Options* out) {
-    OptParseState ops = EXPECTING_FLAG_OR_NAME;
+int parse_arguments(int argc, char* argv[], Options* out) {
+    #define opteq(x) strcmp(o, x) == 0
+    OptParseState ops = EXPECTING_FLAG;
     LookingAt lA;
 
-    for (int i = 0; i < argc; i++) {
+    int st;
+
+    for (int i = 1; i < argc; i++) {
         char* o = argv[i];
-        if (ops == EXPECTING_FLAG_OR_NAME) {
-            // Help
-            if (strcmp(o, "-h") == 0 || strcmp(o, "--help") == 0) {
-                write_help();
-                exit(0);
+
+        switch (ops) {
+            case EXPECTING_FLAG: {
+                if (opteq("-h") || opteq("--help")) {
+                    write_help();
+                    return -1;
+                } else if (opteq("-d")) { // Flags
+                    out->debug = true;
+                } else if (opteq("-p")) {
+                    out->printAST = true;
+                } else if (opteq("--dec")) {
+                    out->decimalAddrs = true;
+                } else if (opteq("-f")) {// Arguments
+                    lA = FILE_E;
+                    ops = EXPECTING_ARGUMENT;
+                } else if (opteq("-o")) {
+                    lA = OUTPUT;
+                    ops = EXPECTING_ARGUMENT;
+                } else if (opteq("-c")) {
+                    lA = CODEOFFSET;
+                    ops = EXPECTING_ARGUMENT;
+                } else if (opteq("-a")) {
+                    lA = ASTFILE;
+                    ops = EXPECTING_ARGUMENT;
+                } else {
+                    printf("Unknown options %s\n", o);
+                }
+                break;
             }
-            // Flags
-            else if (strcmp(o, "-d") == 0) {
-                out->debug = true;
-            } else if (strcmp(o, "-p") == 0) {
-                out->printAST = true;
-            } else if (strcmp(o, "--dec") == 0) {
-                out->decimalAddrs = true;
-            }
-            // Arguments
-            else if (strcmp(o, "-f") == 0) {
-                lA = file;
-                ops = EXPECTING_ARGUMENT;
-            } else if (strcmp(o, "-o") == 0) {
-                lA = output;
-                ops = EXPECTING_ARGUMENT;
-            } else if (strcmp(o, "-c") == 0) {
-                lA = codeOffset;
-                ops = EXPECTING_ARGUMENT;
-            } else if (strcmp(o, "-a") == 0) {
-                lA = astFile;
-                ops = EXPECTING_ARGUMENT;
-            }
-        } else {
-            switch(lA) {
-                case file:
-                    out->file = o;
-                    break;
-                case output:
+
+            case EXPECTING_ARGUMENT: {
+                if (lA == FILE_E) {
+                    st = i;
+                    out->files = &argv[st];
+                    ops = EXPECTING_FLAG_OR_ARGUMENT;
+                } else if (lA == OUTPUT) {
                     out->output = o;
-                    break;
-                case codeOffset:
-                    out->codeOffset = o;
-                    break;
-                case astFile:
+                    ops = EXPECTING_FLAG;
+                } else if (lA == CODEOFFSET) {
+                    sscanf(o, "%hu", &out->codeOffset);
+                    ops = EXPECTING_FLAG;
+                } else if (lA == ASTFILE) {
                     out->astFile = o;
+                    ops = EXPECTING_FLAG;
+                }
+                break;
             }
-            ops = EXPECTING_FLAG_OR_NAME;
+
+            case EXPECTING_FLAG_OR_ARGUMENT: {
+                if (lA == FILE_E) {
+                    if (o[0] == '-' || i + 1 == argc) {
+                        // ended file list, now at flags again
+                        if (i + 1 == argc) {
+                            out->len_f = i - st + 1;
+                        } else {
+                            out->len_f = i - st - 1;
+                            i--; // Will process this flag again
+                        }
+                        ops = EXPECTING_FLAG;
+                    }
+                } else {
+                    printf("Argument parser entered odd state at %s\n", o);
+                }
+                break;
+            }
         }
     }
 
-
-
     if (ops == EXPECTING_ARGUMENT) {
         puts("Expected argument but found end of commandline arguments instead");
-        exit(3);
+        return -1;
     }
+
+    return 1;
 }
 
 void writeb(uint8_t t) {
@@ -113,15 +149,18 @@ int main(int argc, char* argv[]) {
     init_timer();
 
     Options opt;
-    opt.file = NULL;
+    opt.files = NULL;
     opt.output = NULL;
-    opt.codeOffset = NULL;
+    opt.codeOffset = 0;
     opt.astFile = NULL;
     opt.debug = false;
     opt.printAST = false;
     opt.decimalAddrs = false;    
     
-    parse_arguments(argc, argv, &opt);
+    int psuc = parse_arguments(argc, argv, &opt);
+    if (psuc == -1) {
+        return 3;
+    }
 
     FILE* astOut;
     if (opt.astFile) {
@@ -130,42 +169,50 @@ int main(int argc, char* argv[]) {
         astOut = stdout;
     }
 
-    uint16_t cOffset = 0;
-    if (opt.codeOffset) {
-        sscanf(opt.codeOffset, "%hu", &cOffset);
-    }
-
     DebugFlags deb = config_debug(opt.debug, opt.printAST, opt.decimalAddrs);
 
-    if (opt.file == NULL) {
+    if (opt.files == NULL) {
         puts("No input file specified");
-        exit(3);
-    } else if (!exists(opt.file)) {
-        puts("Input file does not exist");
+        return 3;
+    }
+
+    bool fne = false;
+    for (int i = 0; i < opt.len_f; i++) {
+        if (!exists(opt.files[i])) {
+            printf("File: %s, does not exist\n", opt.files[i]);
+            fne = true;
+        }
+    }
+
+    if (fne) {
+        // TODO do stuff
         exit(3);
     }
 
-    char* assembly = read_assembly_file(opt.file);
+    // Assembler will start reading files within the file specific threads
+    // char* assembly = read_assembly_file(opt.files[0]);
 
-    setup();
-    AssemblyResult* aRes = cassemble(assembly, cOffset, deb, astOut);
+    // setup(); // Assembler will take care of it now
+    AssemblingResult aRes;
+    cassemble_mt(opt.files, opt.len_f, opt.codeOffset, deb, astOut, &aRes);
+    // AssemblyResult* aRes = cassemble(assembly, opt.codeOffset, deb, astOut);
 
-    if (opt.astFile) {
+    if (opt.astFile != NULL) {
         fclose(astOut);
     }
 
     putchar('\n');
 
-    if (opt.output) {
+    if (opt.output != NULL) {
         FILE* outFile = fopen(opt.output, "wb");
-        fwrite(aRes->mCode, aRes->lenMC, 1, outFile);
+        fwrite(aRes.mCode, aRes.machineLength, 1, outFile);
         fclose(outFile);
     } else {
-        for (int i = 0; i < aRes->lenMC; i++) {
+        for (int i = 0; i < aRes.machineLength; i++) {
             if ( (i != 0) & (i % 8 == 0) ) {
                 putchar('\n');
             }
-            uint8_t byte = aRes->mCode[i];
+            uint8_t byte = aRes.mCode[i];
             putchar( hexC[byte >> 4] );
             putchar( hexC[byte & 0x0f] );
             putchar(' ');
@@ -175,4 +222,6 @@ int main(int argc, char* argv[]) {
 
     long long elapsed = get_elapsed_time();
     printf("Assembly completed in %lld milliseconds\n", elapsed);
+
+    return 0;
 }

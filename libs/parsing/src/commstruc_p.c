@@ -3,7 +3,6 @@
 #include "common.h"
 #include<stdio.h>
 
-parser* posPlus = NULL;
 parser* betWEq = NULL;
 
 parser* opCurl = NULL;
@@ -38,7 +37,6 @@ mapresult* _b8o16_mapper(result* re_in, void* data) {
 }
 
 void init_commstruct_parsers() {
-    posPlus = possibly(charP('+'));
     betWEq = optionalWhitespaceSurrounded(charP('='));
 
     opBr = then(charP('('), optionalWhitespace, false);

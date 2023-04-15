@@ -14,7 +14,11 @@ typedef union {
     void* pnullv;
 } PNull;
 
-typedef struct {
+#define IPNULLV (PNull){ .inullv = 0 }
+#define CPNULLV (PNull){ .cnullv = '\0' }
+#define PPNULLV (PNull){ .pnullv = NULL }
+
+typedef struct MutArrList {
     int tsize;
     int csize;
     int stsize;
@@ -47,7 +51,7 @@ void dealloc_la(MAL mut);
 #define ALLOCATE_IS(type, start) ALLOCATE_ISSSN(type, start, 10, 0, 0)
 #define ALLOCATE_ISS(type, start, step) ALLOCATE_ISSSN(type, start, step, 0, 0)
 #define ALLOCATE_ISSS(type, start, step, setnull) ALLOCATE_ISSSN(type, start, step, setnull, 0)
-#define ALLOCATE_ISSSN(type, start, step, setnull, nullv) create_array_list(type, start, step, setnull, (PNull)nullv)
+#define ALLOCATE_ISSSN(type, start, step, setnull, nullv) create_array_list(type, start, step, setnull, nullv)
 
 #define TSIZE(al) al->tsize
 #define SIZEOF(al) al->csize

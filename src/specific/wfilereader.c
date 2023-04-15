@@ -15,6 +15,7 @@ int exists(char* filename) {
 
 // I hate this entire function
 char* read_assembly_file(char* filename) {
+    printf("File to be read: %s\n", filename);
     #define BUFFER_SIZE 250
 
     char* read = malloc( BUFFER_SIZE + 1 );

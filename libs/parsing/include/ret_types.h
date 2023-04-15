@@ -77,6 +77,12 @@ typedef struct BinaryOperation {
 } BinaryOperation;
 #define BINARY_OPERATION_TYPE 13
 
+typedef struct LabelElement {
+    char* name;
+    bool is_export;
+} LabelElement;
+#define LABEL_ELEMENT_TYPE 14
+
 bool convert_ret_item_to_str(void* item, int type, char** out);
 
 #endif

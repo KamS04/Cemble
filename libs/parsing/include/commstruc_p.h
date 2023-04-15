@@ -3,7 +3,6 @@
 
 #include "parselib.h"
 
-extern parser* posPlus;
 extern parser* betWEq;
 
 extern parser* opCurl;

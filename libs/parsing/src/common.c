@@ -23,6 +23,7 @@ parser* keyValP;
 parser* commSepKVP;
 parser* semiColon;
 parser* nLineOrEnd;
+parser* posPlus;
 
 parser* _nloearr[2];
 
@@ -60,21 +61,27 @@ r5,  r6, r7, r8
 fp, sp
 */
 
-mapresult* labelMapper(result* r, DataUnion data) {
-    mapresult* mr = malloc(sizeof(mapresult));
+mapresult *labelMapper(result *r, DataUnion data) {
+    mapresult *mr = malloc(sizeof(mapresult));
     mr->dealloc_old = true;
-    ResArrD* rad = r->data.ptr;
-    char* lname = ((result*)(rad->arr[0].ptr))->data.ptr;
-    // char* lname = ((result**)rad->arr)[0]->data;
-    free(rad->arr[0].ptr);
-    rad->arr[0].ptr = NULL;
+    ResArrD *rad = r->data.ptr;
+
+    LabelElement *le = malloc(sizeof(LabelElement));
+    le->is_export = rad->arr[0].ptr != NULL;
+    le->name = ((result*)rad->arr[1].ptr)->data.ptr;
+
+    free(rad->arr[1].ptr);
+    rad->arr[1].ptr = NULL;
+
     mr->res = create_result(
         SYNTAX_TYPE,
-        (DataUnion){ .ptr = create_syntax(
-            LABEL,
-            STRING,
-            (DataUnion){ .ptr = lname }
-        )}
+        (DataUnion){
+            .ptr = create_syntax(
+                LABEL,
+                LABEL_ELEMENT_TYPE,
+                (DataUnion){ .ptr = le }
+            )
+        }
     );
     return mr;
 }
@@ -104,12 +111,16 @@ void init_common_ass_parsers() {
 
     peek = lookAhead(anyChar);
 
-    parser** l = malloc( 3 * sizeof(parser*) );
-    l[0] = validIdentifier;
-    l[1] = charP(':');
-    l[2] = optionalWhitespace;
+    posPlus = possibly(charP('+'));
+
+    int li = 0;
+    parser** l = malloc( 4 * sizeof(parser*) );
+    l[li++] = posPlus;
+    l[li++] = validIdentifier;
+    l[li++] = charP(':');
+    l[li++] = optionalWhitespace;
     // Get first item out of array for label
-    label = map(sequenceOf(l, 3), &labelMapper, false, (DataUnion){ .ptr = NULL });
+    label = map(sequenceOf(l, 4), labelMapper, false, (DataUnion){ .ptr = NULL });
 
     keyValP = korop(&_key_val, false);
     commSepKVP = commaSeparated(keyValP);

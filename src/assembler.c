@@ -2,17 +2,26 @@
 #include<stdbool.h>
 #include<stdio.h>
 #include<string.h>
+#include<pthread.h>
+
 #include "parselib.h"
 #include "assemblelib.h"
+#include "debugging.h"
 #include "assembler.h"
 #include "reader.h"
 #include "encoder.h"
 #include "writer.h"
 #include "sort.h"
+#include "setup.h"
+#include "filereader.h"
+#include "hashmap.h"
+#include "context.h"
 
 #define odec(x) x & 0x30
 #define oast(x) x & 0x0c
 #define odebug(x) x & 0x03
+
+#define SIZEOFARR(x, t) sizeof(x) / sizeof(t)
 
 char* registerNames[] = {
     "ip", "acu",
@@ -29,6 +38,7 @@ DebugFlags config_debug(bool debug, bool pAst, bool dAddrs) {
     return dAddrs << 4 | pAst << 2 | debug;
 }
 
+#if 0
 AssemblyResult* assemble(char* asmC, uint16_t cOffset, DebugFlags debug) {
     return cassemble(asmC, cOffset, debug, stdout);
 }
@@ -53,7 +63,7 @@ AssemblyResult* cassemble(char* asmC, uint16_t cOffset, DebugFlags debug, FILE* 
             fputs(s, aout);
             // fprintf(aout, "%s\n", s);
             putc('\n', aout);
-            free(s);
+            kfree(s);
         }
     }
 
@@ -103,4 +113,186 @@ AssemblyResult* cassemble(char* asmC, uint16_t cOffset, DebugFlags debug, FILE* 
     ar->lenAST = len;
 
     return ar;
+}
+#endif
+
+void* parseFile(SParseRead* out) {
+    out->asmF = read_assembly_file(out->filename);
+    out->parse = run(create_assembly_parser(), out->asmF);
+    ResArrD* orad = out->parse->result->data.ptr;
+    out->lenAst = orad->a_len;
+    out->ast = malloc(orad->a_len * sizeof(Syntax*));
+    for (int i = 0; i < orad->a_len; i++) {
+        out->ast[i] = orad->arr[i].ptr;
+    }
+
+    // We don't need the array anymore
+    kfree(orad->arr);
+    // We don't need the orad anymore;
+    kfree(orad);
+    return NULL;
+}
+
+void* readParsed(SParseRead* out) {
+    out->state = mf_readRun(out->ast, out->lenAst, &out->readOutput, &out->error);
+    return NULL;
+}
+
+int cassemble_mt(char** filenames, int len_f, uint16_t cOffset, DebugFlags debug, FILE* astOut, AssemblingResult *asmRes) {
+    setup();
+
+    // Hopefully everything is now ready
+    create_assembly_parser();
+
+    #if defined RELEASE || defined DEBUG
+    pthread_t thread_ids[len_f];
+    #else
+    pthread_t *thread_ids = malloc( len_f * sizeof(pthread_t) );
+    #endif
+
+    SParseRead *parseReads = malloc( len_f * sizeof(SParseRead) ); // would make this an array
+    // but have actual problems when outputting
+
+    // #region First Parse all the ASTs -- Multithreaded
+    if (len_f == 1) {
+        parseReads[0].idx = 0;
+        parseReads[0].filename = filenames[0];
+        parseFile(&parseReads[0]);
+        readParsed(&parseReads[0]);
+    } else {
+        for (int i = 0; i < len_f; i++) {
+            parseReads[i].idx = i;
+            parseReads[i].filename = filenames[i];
+            pthread_create(&thread_ids[i], NULL, parseFile, &parseReads[i]);
+        }
+
+        for (int i = 0; i < len_f; i++) {
+            pthread_join(thread_ids[i], NULL);
+        }
+    }
+
+    bool err = false;
+    for (int i = 0; i < len_f; i++) {
+        state* sn = parseReads[i].parse;
+        if (sn->is_error || parseReads[i].asmF[sn->index] != '\0') {
+            if (!err) {
+                puts("Assembly had a syntax error\n");
+            }
+
+            printf("%s - Failed at %d\n", parseReads[i].filename, sn->index);
+            pretty_print_asm_error(parseReads[i].asmF, sn);
+            puts("\n");
+            err = true;
+        }
+    }
+
+    if (err) {
+        // TODO In the future deallocate everything
+        // Yea we ain't getting there
+        exit(3);
+    }
+
+    if (oast(debug)) {
+        for (int i = 0; i < len_f; i++) {
+            printf("Syntax : %s\n", parseReads[i].filename);
+            pretty_print_syntax(parseReads[i].ast, parseReads[i].lenAst, astOut);
+            putchar('\n');
+        }
+    }
+    // #endregion
+
+    // #region Second Read through all the ASTs -- Multithreaded
+    if (len_f != 1) {
+        for (int i = 0; i < len_f; i++) {
+            pthread_create(&thread_ids[i], NULL, readParsed, &parseReads[i]);
+        }
+
+        for (int i = 0; i < len_f; i++) {
+            pthread_join(thread_ids[i], NULL);
+        }
+    }
+    // #endregion
+
+    // #region Third initialized the uninitialized Variables -- Singlethreaded
+    int totalexportstructures = 0;
+    int totalexportsymbols = 0;
+
+    err = false;
+    uint8_t currentOffset = cOffset;
+
+    for (int i = 0; i < len_f; i++) {
+        if (parseReads[i].state == -1) {
+            err = true;
+            printf("Reading failed for %s, Error:\n", parseReads[i].filename);
+            puts(parseReads[i].error);
+        }
+        totalexportstructures += parseReads[i].readOutput.cData.exportStructures;
+        totalexportsymbols += parseReads[i].readOutput.cData.exports;
+
+        // update segment offsets
+        parseReads[i].segmentOffset = currentOffset;
+        currentOffset += parseReads[i].readOutput.cAddr; // sum up the cOffs
+    }
+
+    if (err) {
+        // TODO in the future deallocate stuff
+        // see other comment
+        exit(3);
+    }
+
+    HashMap *exportSymbols = hashmap_int(NULL, NULL, 0, totalexportsymbols);
+    HashMap *exportStructures = hashmap_ptr(NULL, NULL, 0, totalexportstructures);
+
+    // Initialize stuff
+    char *error;
+    char *efile;
+    int err_state = complete_initialize(parseReads, len_f, exportSymbols, exportStructures, &error, &efile);
+    
+    if (err_state != 1) {
+        printf("Error Ocurred in: %s\n", efile);
+        printf("Error:\n%s\n", error);
+        exit(3);
+    }
+    
+    // #endregion
+
+    // #region Fourth Encode -- Singlethreaded
+    uint8_t byteLength = currentOffset - cOffset;
+    uint8_t *mCode = malloc(byteLength * sizeof(uint8_t));
+
+    AssemblingContext asmCon;
+
+    asmCon.codeSize = byteLength;
+    asmCon.cOffset = cOffset;
+    asmCon.len_f = len_f;
+    asmCon.sparseReads = parseReads;
+    asmCon.registersMap = hashmap_int(registerNames, registerIndexes, SIZEOFARR(registerNames, char*), SIZEOFARR(registerNames, char*));
+
+    encoderOfAsm(asmCon, mCode, exportSymbols, exportStructures);
+
+    // #endregion
+
+    // #region Finish
+
+    memcpy(&asmRes->asmCon, &asmCon, sizeof(AssemblingContext));
+    asmRes->mCode = mCode; // whoops
+    asmRes->sparseReads = parseReads;
+    asmRes->machineLength = byteLength;
+    asmRes->cOffset = cOffset;
+    asmRes->len_f = len_f;
+
+    if (odebug(debug)) {
+        puts("MachineCodeArray()");
+        for (int i = 0; i < byteLength; i++) {
+            printf("%02d, ", mCode[i]);
+        }
+        puts(")\n\n");
+
+        mf_pretty_print_machine_code(asmRes, odec(debug));
+    }
+
+
+    // #endregion
+
+    return 1;
 }

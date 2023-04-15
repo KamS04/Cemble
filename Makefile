@@ -62,7 +62,8 @@ CC=gcc
 OPT=
 # automatically grab all the headers
 CFLAGS=-Wall -Wextra $(foreach D,$(INCDIRS) $(SPECIFIC)/include,-I$(D)) $(OPT)
-
+DEBFLAGS=-DDEBUG -ggdb
+RELFLAGS=-DRELEASE
 
 # regular expression replacement
 OBJECTS=$(patsubst %.c,$(OBJDIR)/%$(OBJEXT),$(CFILES)) $(SPECIFICOBJECTS)
@@ -85,9 +86,15 @@ define clibs
 	$(foreach Libfile,$(1),-l$(Libfile))
 endef
 
+DEFAULT_LINKS=-lm -lpthread
+
 release: $(RELEASE)
 
 debug: $(DEBUG)
+
+all: release debug
+
+parsing: $(ASSEMBLELIB) $(DEBUGASSEMBLELIB)
 
 ifeq ($(OS), Windows_NT)
 setup:
@@ -117,25 +124,25 @@ endif
 
 # release build
 $(RELEASE): $(OBJECTS) $(ASSEMBLELIB) $(PARSELIB)
-	$(CC) $(CFLAGS) -o $(RELEASE) $(OBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNPARSE) $(LNASSEMBLE)) -lm
+	$(CC) $(CFLAGS) $(RELFLAGS) -o $(RELEASE) $(OBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNPARSE) $(LNASSEMBLE)) $(DEFAULT_LINKS)
 	@echo "Success Release Build"
 
 # debug build
 $(DEBUG): $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB) $(DEBUGPARSELIB)
-	$(CC) $(CFLAGS) -o $(DEBUG) $(DEBUGOBJECTS) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
+	$(CC) $(CFLAGS) $(DEBFLAGS) -o $(DEBUG) $(DEBUGOBJECTS) $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) $(DEFAULT_LINKS)
 	@echo "Success Debug Build"
 
 # test build
 test: $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB)
-	$(CC) $(CFLAGS) -o $(ofile) $(tfile) $(filter-out $(OBJDIR)/src/commandline.d$(OBJEXT),$(DEBUGOBJECTS)) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
+	$(CC) $(CFLAGS) $(DEBFLAGS) -o $(ofile) $(tfile) $(filter-out $(OBJDIR)/src/commandline.d$(OBJEXT),$(DEBUGOBJECTS)) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
 
 # release objects
 $(OBJDIR)/%$(OBJEXT): %.c
-	$(CC) $(CFLAGS) $(call depflags,$<,$(DEPEXT)) -c -o $@ $<
+	$(CC) $(CFLAGS) $(RELFLAGS) $(call depflags,$<,$(DEPEXT)) -c -o $@ $<
 
 # debug objects
 $(OBJDIR)/%.d$(OBJEXT): %.c
-	$(CC) $(CFLAGS) $(call depflags,$<,$(DEPEXT)) -c -o $@ $<
+	$(CC) $(CFLAGS) $(DEBFLAGS) $(call depflags,$<,$(DEPEXT)) -c -o $@ $<
 
 # release assemblelib
 $(ASSEMBLELIB):

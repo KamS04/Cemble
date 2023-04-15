@@ -1,4 +1,5 @@
 #include<stdio.h>
+
 #include "map.h"
 #include "sort.h"
 #include "string.h"
@@ -8,13 +9,13 @@
 SimpleEntry* _cache;
 char* _cached_key;
 
-int _cmp_se(void* a, void* b) {
+int _cmp_se_old(void* a, void* b) {
     #define sa ((SimpleEntry*)a)
     #define sb ((SimpleEntry*)b)
     return strcmp( sa->key, sb->key );
 }
 
-int _cmp_ke(void* a, void* b) {
+int _cmp_ke_old(void* a, void* b) {
     #define sb ((SimpleEntry*)b)
     return strcmp( (char*)a, sb->key);
 }
@@ -39,7 +40,7 @@ Map _create_simplemap(char* keys[], void* datas, int len, mtype type) {
             }
     }
 
-    quicksort(sizeof(SimpleEntry), map->arr, len, &_cmp_se);
+    quicksort(sizeof(SimpleEntry), map->arr, len, &_cmp_se_old);
     
     if (len < TOO_BIG_FOR_LINSEARCH) {
         map->sf = &linsearch;
@@ -88,7 +89,7 @@ void add_ito(Map map, char* key, int data) {
     _cached_key = NULL;
 }
 
-void add_pto(Map map, char* key, void* data) {
+void add_pto_old(Map map, char* key, void* data) {
     map->arr[map->clength].key = key;
     map->arr[map->clength++].data.pdat = data;
 
@@ -100,7 +101,7 @@ void add_pto(Map map, char* key, void* data) {
 
 void finish(Map map) {
     map->clength = -1;
-    quicksort(sizeof(SimpleEntry), map->arr, map->length, &_cmp_se);
+    quicksort(sizeof(SimpleEntry), map->arr, map->length, &_cmp_se_old);
 }
 
 SimpleEntry* get_etm(Map map, char* key) {
@@ -113,11 +114,11 @@ SimpleEntry* get_etm(Map map, char* key) {
     if (map->clength >= 0) {
         fl = map->clength;
     }
-    _cache = map->sf(sizeof(SimpleEntry), map->arr, key, fl, &_cmp_ke);
+    _cache = map->sf(sizeof(SimpleEntry), map->arr, key, fl, &_cmp_ke_old);
     return _cache;
 }
 
-bool has_key(Map map, char* key) {
+bool has_key_old(Map map, char* key) {
     return get_etm(map, key) != NULL;
 }
 

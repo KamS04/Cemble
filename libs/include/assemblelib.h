@@ -80,11 +80,11 @@ typedef struct Syntax {
 } Syntax;
 
 // ret_types.h
-typedef struct {
+typedef struct SymbolicElement {
     char* name;
 } SymbolicElement;
 
-typedef struct {
+typedef struct DataElement {
     int size;
     bool is_export;
     char* name;
@@ -92,49 +92,54 @@ typedef struct {
     int val_len;
 } DataElement;
 
-typedef struct {
+typedef struct SSynPair {
     char* key;
     Syntax* val;
 } SSynPair;
 
-typedef struct {
+typedef struct StructureElement {
     bool is_export;
     char* name;
     SSynPair** members;
     int mem_len;
 } StructureElement;
 
-typedef struct {
+typedef struct ConstantElement {
     bool is_export;
     char* name;
     Syntax* value;
 } ConstantElement;
 
-typedef struct {
+typedef struct InterpretSingle {
     char* structure;
     Syntax* symbol;
     char* property;
 } InterpretSingle;
 
-typedef struct {
+typedef struct InterpretArray {
     char* structure;
     Syntax* index;
     Syntax* symbol;
     char* property;
 } InterpretArray;
 
-typedef struct {
+typedef struct InstructionItem {
     Instruction* ins;
     Syntax** args;
     int args_s;
 } InstructionItem;
 
-typedef struct {
+typedef struct BinaryOperation {
     char operation;
     Syntax* a;
     Syntax* b;
 } BinaryOperation;
 
+typedef struct LabelElement {
+    char* name;
+    bool is_export;
+} LabelElement;
+#define LABEL_ELEMENT_TYPE 14
 
 // Member Declarations
 
@@ -152,6 +157,7 @@ extern parser* keyValP;
 extern parser* commSepKVP;
 extern parser* semiColon;
 extern parser* nLineOrEnd;
+extern parser* posPlus;
 
 // types.h
 extern char* typeStrs[];
@@ -172,7 +178,6 @@ extern parser* sqBrackParser;
 extern int C_DEBUG_MODE;
 
 // commstruc_p.h
-extern parser* posPlus;
 extern parser* betWEq;
 extern parser* opCurl;
 extern parser* cloCurl;

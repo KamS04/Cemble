@@ -2,6 +2,7 @@
 #include<stdio.h>
 #include "parselib.h"
 #include "assemblelib.h"
+#include "debugging.h"
 #include "instruction.h"
 #include "formats.h"
 
@@ -31,7 +32,7 @@ mapresult* singleMapper(result* r, DataUnion data) {
         (DataUnion){ .ptr = create_insitem(ins, (Syntax**)a, 1) }
     );
     mr->res = create_result(SYNTAX_TYPE, (DataUnion){ .ptr = syn });
-    free(rarr[2].ptr);
+    kfree(rarr[2].ptr);
     rarr[2].ptr = NULL;
     deallocate_result(r);
     return mr;
@@ -65,9 +66,9 @@ mapresult* doubleMapper(result* r, DataUnion data) {
     Syntax** _pr = malloc(2 * sizeof(Syntax*));
     _pr[0] = rarr(2)->data.ptr;
     _pr[1] = rarr(4)->data.ptr;
-    free(darr[2].ptr);
+    kfree(darr[2].ptr);
     darr[2].ptr = NULL;
-    free(darr[4].ptr);
+    kfree(darr[4].ptr);
     darr[4].ptr = NULL;
     Syntax* syn = create_syntax(
         INSTRUCTION,
@@ -111,11 +112,11 @@ mapresult* tripleMapper(result* r, DataUnion data) {
     _pr[0] = rarr(2)->data.ptr;
     _pr[1] = rarr(4)->data.ptr;
     _pr[2] = rarr(6)->data.ptr;
-    free(darr[2].ptr);
+    kfree(darr[2].ptr);
     darr[2].ptr = NULL;
-    free(darr[4].ptr);
+    kfree(darr[4].ptr);
     darr[4].ptr = NULL;
-    free(darr[6].ptr);
+    kfree(darr[6].ptr);
     darr[6].ptr = NULL;
     Syntax* syn = create_syntax(
         INSTRUCTION,

@@ -1,9 +1,11 @@
 #include<stdio.h>
+#include<string.h>
+
 #include "parselib.h"
 #include "assembler.h"
 #include "encoder.h"
 #include "sort.h"
-#include<string.h>
+#include "debugging.h"
 
 parser* _eL[2];
 parser* _encodedLines;
@@ -58,6 +60,15 @@ void pretty_print_asm_error(char* asmC, state* pA) {
     }
 }
 
+void pretty_print_syntax(Syntax** parsedAss, int len, FILE* aout) {
+    char* s;
+    for (int i = 0; i < len; i++) {
+        s = syntax_to_string(parsedAss[i], true);
+        fputs(s, aout);
+        kfree(s);
+    }
+}
+
 parser* encodedLines() {
     if (!_in_enclin) {
         _eL[0] = instructionParser();
@@ -105,7 +116,7 @@ long long next_encoded_lines(int start, char* asmC) {
         } else {
             long long ret = ((long long)i_state->index) << 32 | n_state->index;
             deallocate_state(n_state);
-            free(i_state);
+            kfree(i_state);
             // printf("%lld %d %d\n", ret, i_state->index, n_state->index);
             return ret;
         }
@@ -128,6 +139,7 @@ void remove_new_lines(char* txt) {
     return;
 }
 
+#if 0
 void pretty_print_machine_code(uint8_t* mCode, uint8_t cOffset, int mLen, char* asmC, AssemblyContext* asmCon, int decAddrs) {
     int insWritten = 5;
     bool fst = true;
@@ -188,5 +200,89 @@ void pretty_print_machine_code(uint8_t* mCode, uint8_t cOffset, int mLen, char* 
         putchar( hexC[byte & 0x0f] );
         putchar(' ');
         insWritten--;
+    }
+}
+#endif
+
+typedef void(*addrPrinter)(uint16_t);
+
+void decAddrPrinter(uint16_t addr) {
+    printf("%05d: ", addr);
+}
+
+void hexAddrPrinter(uint16_t addr) {
+    putchar( hexC[addr >> 12] );
+    putchar( hexC[(addr >> 8) & 0x000f]);
+    putchar( hexC[(addr >> 4) & 0x000f]);
+    putchar( hexC[addr & 0x000f] );
+    putchar(':');
+    putchar(' ');
+}
+
+void mf_pretty_print_machine_code(AssemblingResult *asmRes, int decAddrs) {
+    uint8_t *mCode = asmRes->mCode;
+    int mLen = asmRes->machineLength;
+    
+    int insWritten = 5;
+    bool fst = true;
+    uint16_t cAddr = asmRes->cOffset;
+
+    addrPrinter praddr;
+    if (decAddrs) {
+        praddr = decAddrPrinter;
+    } else {
+        praddr = hexAddrPrinter;
+    }
+
+
+    for (int i = 0; i < asmRes->len_f; i++) {
+        SParseRead sp = asmRes->sparseReads[i];
+        
+        // I think I can use cAddr
+        int start_segment = (int)(sp.segmentOffset - asmRes->cOffset);
+        int end_segment = (int)(sp.segmentOffset + sp.readOutput.cAddr - asmRes->cOffset);
+        int segment_size = end_segment - start_segment;
+
+        uint8_t *sCode = &mCode[start_segment];
+        int st = 0; int le = 0; int en = 0;
+
+        printf("Segment: %s\n", sp.filename);
+        praddr(cAddr);
+        for (int a = 0; a <= segment_size; a++) {
+            int idxNL = bin_search_prim(sp.readOutput.nextLineIndexes, sp.readOutput.num_next_lines, a);
+            
+            if (a != 0 && idxNL != -1) {
+                if (insWritten < 0) {
+                    insWritten = 0;
+                }
+
+                printf("%-*s| ", insWritten * 3, "");
+                long long out = next_encoded_lines(st, sp.asmF);
+                st = (int)(out >> 32);
+                en = (int)(out);
+                le = en - st;
+                memcpy(_hold_stuff, &sp.asmF[st], le);
+                _hold_stuff[le] = '\0';
+                remove_new_lines(_hold_stuff);
+                printf("%s\n", _hold_stuff);
+                st = en;
+                
+                if (a == segment_size) {
+                    break;
+                }
+
+                praddr(cAddr);
+                // cAddr needs to legitimately be taken care of
+
+                insWritten = 5;
+            }
+
+            uint8_t byte = sCode[a];
+            putchar( hexC[byte >> 4] );
+            putchar( hexC[byte & 0x0f] );
+            putchar(' ');
+            insWritten--;
+            cAddr++;
+        }
     }
 }

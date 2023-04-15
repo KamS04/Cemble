@@ -14,6 +14,7 @@ extern parser* keyValP;
 extern parser* commSepKVP;
 extern parser* semiColon;
 extern parser* nLineOrEnd;
+extern parser* posPlus;
 
 parser* optionalWhitespaceSurrounded(parser* p);
 parser* commaSeparated(parser* p);
