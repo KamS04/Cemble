@@ -91,6 +91,7 @@ int parse_arguments(int argc, char* argv[], Options* out) {
                 if (lA == FILE_E) {
                     st = i;
                     out->files = &argv[st];
+                    out->len_f = 1;
                     ops = EXPECTING_FLAG_OR_ARGUMENT;
                 } else if (lA == OUTPUT) {
                     out->output = o;
@@ -112,7 +113,7 @@ int parse_arguments(int argc, char* argv[], Options* out) {
                         if (i + 1 == argc) {
                             out->len_f = i - st + 1;
                         } else {
-                            out->len_f = i - st - 1;
+                            out->len_f = i - st;
                             i--; // Will process this flag again
                         }
                         ops = EXPECTING_FLAG;

@@ -16,6 +16,12 @@ void swap(size_t isize, void* arr, int a, int b) {
     memcpy(bm, &_hold_on, isize);
 }
 
+void swap_t(size_t isize, void *a, void *b) {
+    memcpy(&_hold_on, a, isize);
+    memcpy(a, b, isize);
+    memcpy(b, &_hold_on, isize);
+}
+
 // if a < b then cmp < 0
 // if a == b then cmp == 0
 // if a > b then cmp > 0
@@ -46,6 +52,19 @@ void _quicksort(size_t isize, void* arr, int start, int end, int(*cmp)(void*,voi
 // if a > b then cmp > 0
 void quicksort(size_t isize, void* arr, int length, int(*cmp)(void*, void*)) {
     _quicksort(isize, arr, 0, length, cmp);
+}
+
+// ???? 😟😔
+void bubblesort(size_t isize, void *arr, int length, int(*cmp)(void*,void*)) {
+    for (int i = 0; i < length; i++) {
+        for (int j = 0; j < length - 1; j++) {
+            void* a = (uintptr_t)arr + isize * j;
+            void* b = (uintptr_t)arr + isize * j + isize;
+            if (cmp(a, b) > 0) {
+                swap_t(isize, a, b);
+            }
+        }
+    }
 }
 
 void* binsearch(size_t isize, void* arr, void* key, int length, int(*cmp)(void*,void*)) {

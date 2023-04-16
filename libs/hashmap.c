@@ -21,7 +21,13 @@ uint32_t hasher(char *key) {
 
 // compare two HashEntry's
 int _cmp_se(void *a, void *b) {
-    return (sa->hash == sb->hash && strcmp(sa->key, sb->key) == 0);
+    if (sa->hash < sb->hash) {
+        return -1;
+    } else if (sa->hash > sb->hash) {
+        return 1;
+    } else {
+        return strcmp(sa->key, sb->key);
+    }
 }
 
 struct comp_ent {
@@ -62,7 +68,9 @@ HashMap* _create_hashmap(char *keys[], void *datas, int len, int expecting, enum
         }
     }
 
-    quicksort(sizeof(struct HashMap), map->arr, len, _cmp_se);
+    
+    // bubblesort(sizeof(struct HashMap), map->arr, len, _cmp_se);
+    quicksort(sizeof(struct HashEntry), map->arr, len, _cmp_se);
 
     return map;
 }
@@ -73,7 +81,7 @@ HashMap* _create_nt_hashmap(char *keys[], union _mdata *datas, int len, int expe
     map->clen = len;
     map->type = MPtr;
     map->arr = malloc(expecting * sizeof(struct HashEntry));
-    map->freeze = false;
+    map->freeze = expecting == len;
 
     for (int i = 0; i < len; i++) {
         map->arr[i].key = keys[i];

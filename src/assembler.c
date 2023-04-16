@@ -31,7 +31,7 @@ char* registerNames[] = {
 };
 int registerIndexes[] = {
     0,  1,  2,  3,  4,  5,  6,
-    7,  8,  9, 10, 11, 12
+    7,  8,  9, 10, 11, 12, 13
 };
 
 DebugFlags config_debug(bool debug, bool pAst, bool dAddrs) {
@@ -218,7 +218,7 @@ int cassemble_mt(char** filenames, int len_f, uint16_t cOffset, DebugFlags debug
     int totalexportsymbols = 0;
 
     err = false;
-    uint8_t currentOffset = cOffset;
+    uint16_t currentOffset = cOffset;
 
     for (int i = 0; i < len_f; i++) {
         if (parseReads[i].state == -1) {
@@ -257,7 +257,7 @@ int cassemble_mt(char** filenames, int len_f, uint16_t cOffset, DebugFlags debug
     // #endregion
 
     // #region Fourth Encode -- Singlethreaded
-    uint8_t byteLength = currentOffset - cOffset;
+    uint16_t byteLength = currentOffset - cOffset;
     uint8_t *mCode = malloc(byteLength * sizeof(uint8_t));
 
     AssemblingContext asmCon;

@@ -134,7 +134,7 @@ $(DEBUG): $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB) $(DEBUGPARSELIB)
 
 # test build
 test: $(DEBUGOBJECTS) $(DEBUGASSEMBLELIB)
-	$(CC) $(CFLAGS) $(DEBFLAGS) -o $(ofile) $(tfile) $(filter-out $(OBJDIR)/src/commandline.d$(OBJEXT),$(DEBUGOBJECTS)) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) -lm
+	$(CC) $(CFLAGS) $(DEBFLAGS) -o $(ofile) $(tfile) $(filter-out $(OBJDIR)/src/commandline.d$(OBJEXT),$(DEBUGOBJECTS)) -DDEBUG -ggdb $(call libflags,libs $(ASSEMBLELIBDIR)) $(call clibs,$(LNDPARSE) $(LNDASSEMBLE)) $(DEFAULT_LINKS)
 
 # release objects
 $(OBJDIR)/%$(OBJEXT): %.c
